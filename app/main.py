@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import secrets
+import socket
 import time
 from pathlib import Path
 from typing import Dict
@@ -24,7 +25,9 @@ RECEIVER_TTL = int(os.getenv("RECEIVER_TTL_SECONDS", "86400"))
 APP_VERSION = os.getenv("APP_VERSION", "tv1-webrtc-dev")
 TURN_SECRET = os.getenv("TURN_SECRET", "")
 TURN_HOST = os.getenv("TURN_HOST", "tv1.kitkaraoke.com")
+TURN_PUBLIC_IP = os.getenv("TURN_PUBLIC_IP", "").strip()
 TURN_TTL = int(os.getenv("TURN_TTL_SECONDS", "3600"))
+_turn_resolution = {"host": "", "at": 0.0, "source": ""}
 
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"), format="%(asctime)s | %(levelname)s | %(message)s")
 log = logging.getLogger("kitkaraoke-tv")
@@ -100,8 +103,26 @@ def valid_role_token(payload: dict, token: str) -> bool:
     return False
 
 
+def resolve_turn_host() -> tuple[str, str]:
+    now = time.time()
+    if TURN_PUBLIC_IP:
+        return TURN_PUBLIC_IP, "env"
+    cached = _turn_resolution.get("host", "")
+    if cached and now - float(_turn_resolution.get("at", 0.0) or 0.0) < 300:
+        return cached, str(_turn_resolution.get("source") or "cache")
+    try:
+        infos = socket.getaddrinfo(TURN_HOST, 3478, socket.AF_INET, socket.SOCK_DGRAM)
+        ip = infos[0][4][0]
+        _turn_resolution.update({"host": ip, "at": now, "source": "server-dns"})
+        return ip, "server-dns"
+    except Exception:
+        _turn_resolution.update({"host": TURN_HOST, "at": now, "source": "hostname-fallback"})
+        return TURN_HOST, "hostname-fallback"
+
+
 def ice_servers(receiver_id: str) -> list[dict]:
-    servers = [{"urls": [f"stun:{TURN_HOST}:3478"]}]
+    turn_host, _ = resolve_turn_host()
+    servers = [{"urls": [f"stun:{turn_host}:3478"]}]
     if TURN_SECRET:
         expiry = int(time.time()) + TURN_TTL
         username = f"{expiry}:{receiver_id[:24]}"
@@ -110,8 +131,8 @@ def ice_servers(receiver_id: str) -> list[dict]:
         servers.append(
             {
                 "urls": [
-                    f"turn:{TURN_HOST}:3478?transport=udp",
-                    f"turn:{TURN_HOST}:3478?transport=tcp",
+                    f"turn:{turn_host}:3478?transport=udp",
+                    f"turn:{turn_host}:3478?transport=tcp",
                 ],
                 "username": username,
                 "credential": credential,
@@ -269,11 +290,15 @@ async def get_ice(receiver_id: str, token: str, request: Request):
     payload = await load_receiver(receiver_id)
     if not payload or not valid_role_token(payload, token):
         raise HTTPException(status_code=403, detail="Token de transporte inválido")
+    turn_host, turn_source = resolve_turn_host()
     return {
         "ok": True,
         "iceServers": ice_servers(receiver_id),
         "ttl": TURN_TTL,
         "turn": bool(TURN_SECRET),
+        "turnHost": TURN_HOST,
+        "turnResolvedHost": turn_host,
+        "turnResolution": turn_source,
     }
 
 

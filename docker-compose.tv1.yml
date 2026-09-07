@@ -7,7 +7,7 @@ services:
       REDIS_URL: redis://redis:6379/0
       PAIR_TTL_SECONDS: "300"
       RECEIVER_TTL_SECONDS: "86400"
-      APP_VERSION: "tv1-webrtc-diag-1"
+      APP_VERSION: "tv1-webrtc-ice-2"
       LOG_LEVEL: INFO
       TURN_SECRET: ${TURN_SECRET}
       TURN_HOST: tv1.kitkaraoke.com

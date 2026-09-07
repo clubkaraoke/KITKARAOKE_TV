@@ -68,6 +68,7 @@ html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}
   <div class="diag-shell">
     <div class="diag-head"><b>DIAGNÓSTICO TV · WEBRTC</b><span id="diagState"></span><span class="diag-grow"></span>
       <button class="diag-action" id="diagRefresh">Actualizar</button>
+      <button class="diag-action" id="diagIceTest">Probar ICE/TURN</button>
       <button class="diag-action primary" id="diagCopy">Copiar TXT</button>
       <button class="diag-action" id="diagDownload">Descargar .txt</button>
       <button class="diag-action" id="diagClear">Limpiar</button>
@@ -103,12 +104,13 @@ html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}
   let pendingIce=[];
   let iceConfig=null;
   let trackPlayTimer=null;
+  let peerPolicy="all";
 
   const TD={
-    version:"TV-DIAG-1.0",logs:[],stats:{},media:null,offerAt:0,peerAt:0,trackAt:0,playingAt:0,
+    version:"TV-DIAG-1.1",logs:[],stats:{},media:null,offerAt:0,peerAt:0,trackAt:0,playingAt:0,
     waitAt:0,waitCount:0,stallMs:0,lastStatsAt:0,lastBytes:0,lastVideoBytes:0,lastAudioBytes:0,lastDropped:0,lastLost:0,
     lastFrameAt:0,lastFrameGap:0,frameCount:0,rxToDisplayMs:null,captureToDisplayMs:null,
-    frameWatch:false,warnAt:{},serverVersion:"",startedAt:Date.now()
+    frameWatch:false,warnAt:{},serverVersion:"",iceTest:null,iceTestRunning:false,startedAt:Date.now()
   };
   try{
     const old=JSON.parse(sessionStorage.getItem("kit_tv_diag")||"[]");
@@ -150,7 +152,7 @@ html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}
       video:{width:remoteVideo.videoWidth||0,height:remoteVideo.videoHeight||0,readyState:remoteVideo.readyState,networkState:remoteVideo.networkState,
         paused:remoteVideo.paused,muted:remoteVideo.muted,volume:remoteVideo.volume,currentTime:Number(remoteVideo.currentTime||0),
         totalFrames:q?.totalVideoFrames||0,droppedFrames:q?.droppedVideoFrames||0,corruptedFrames:q?.corruptedVideoFrames||0},
-      stats:TD.stats,network:netInfo(),
+      stats:TD.stats,iceSelfTest:TD.iceTest,network:netInfo(),
       device:{ua:navigator.userAgent,platform:navigator.platform||"",cpu:navigator.hardwareConcurrency||0,memory:navigator.deviceMemory||0,
         screen:screen.width+"x"+screen.height,dpr:window.devicePixelRatio||1,visibility:document.visibilityState},
       counters:{waitCount:TD.waitCount,stallMs:Math.round(TD.stallMs),frameCount:TD.frameCount,lastFrameGapMs:Math.round(TD.lastFrameGap||0)}
@@ -165,6 +167,7 @@ html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}
     diagState.textContent=" · "+(pc?.connectionState||"sin peer")+" / ICE "+(pc?.iceConnectionState||"—");
     diagMetrics.textContent=[
       "TV DIAG: "+TD.version+" · backend "+(TD.serverVersion||"—"),
+      "ICE SELF TEST: "+(TD.iceTest?("STUN="+(TD.iceTest.stunOk?"OK":"FAIL")+" · TURN="+(TD.iceTest.turnOk?"OK":"FAIL")+" · RELAY FORZADO="+(TD.iceTest.relayForcedOk?"OK":"FAIL")+" · host="+(TD.iceTest.resolvedHost||"—")):(TD.iceTestRunning?"EJECUTANDO…":"sin ejecutar")),
       "Media: "+(m.playId||"—")+" · "+(m.kind||"—")+" · "+(m.artist||"")+" — "+(m.title||""),
       "Resolución recibida: "+x.video.width+"x"+x.video.height+" · FPS "+metric(s.fps)+" · frames dropped "+(s.framesDropped??x.video.droppedFrames),
       "WebRTC: peer="+x.peer+" · ICE="+x.ice+" · signaling="+x.signaling+" · RTT="+metric(s.rttMs," ms"),
@@ -207,6 +210,7 @@ html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}
   diagBtn.onclick=()=>toggleDiag();
   document.getElementById("diagClose").onclick=()=>toggleDiag(false);
   document.getElementById("diagRefresh").onclick=()=>renderDiag();
+  document.getElementById("diagIceTest").onclick=()=>runIceSelfTest(true);
   document.getElementById("diagCopy").onclick=copyDiag;
   document.getElementById("diagDownload").onclick=downloadDiag;
   document.getElementById("diagClear").onclick=()=>{TD.logs=[];TD.warnAt={};diagBtn.className="";try{sessionStorage.removeItem("kit_tv_diag")}catch(_){}dlog("INFO","UI","Logs TV limpiados","",false);renderDiag()};
@@ -280,14 +284,79 @@ html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}
   }
 
 
-  async function fetchIce(){
-    if(iceConfig) return iceConfig;
+  async function fetchIce(force){
+    if(iceConfig&&!force) return iceConfig;
     const r=await fetch("/api/ice/"+encodeURIComponent(session.receiverId)+"?token="+encodeURIComponent(session.receiverToken),{cache:"no-store"});
     const j=await r.json();
     if(!r.ok||!j.ok) throw new Error(j.detail||"No se pudo obtener ICE");
     iceConfig=j;
-    dlog("INFO","WEBRTC","Configuración ICE recibida","TURN="+(j.turn?"sí":"no")+" · servidores="+(j.iceServers||[]).length,false);
+    dlog("INFO","WEBRTC","Configuración ICE recibida","TURN="+(j.turn?"sí":"no")+" · servidores="+(j.iceServers||[]).length+" · host="+(j.turnResolvedHost||j.turnHost||"—")+" · resolución="+(j.turnResolution||"—"),false);
     return j;
+  }
+
+  function iceCandidateType(c){
+    if(!c)return"";
+    if(c.type)return String(c.type);
+    const m=String(c.candidate||"").match(/\styp\s(host|srflx|relay|prflx)\b/i);
+    return m?m[1].toLowerCase():"";
+  }
+  async function gatherIceCandidates(policy,timeoutMs){
+    const ice=await fetchIce(true);
+    const started=performance.now(),found=[],errors=[];
+    return await new Promise(async resolve=>{
+      let done=false,timer=null,testPc=null;
+      const finish=()=>{
+        if(done)return;done=true;if(timer)clearTimeout(timer);
+        try{testPc&&testPc.close()}catch(_){}
+        const types=[...new Set(found.map(x=>x.type).filter(Boolean))];
+        resolve({policy,elapsedMs:Math.round(performance.now()-started),types,candidates:found,errors});
+      };
+      try{
+        testPc=new RTCPeerConnection({iceServers:ice.iceServers||[],iceTransportPolicy:policy||"all"});
+        testPc.createDataChannel("kit-ice-self-test");
+        testPc.onicecandidate=e=>{
+          if(!e.candidate)return finish();
+          found.push({type:iceCandidateType(e.candidate),protocol:e.candidate.protocol||"",relayProtocol:e.candidate.relayProtocol||""});
+        };
+        testPc.onicecandidateerror=e=>errors.push({code:Number(e.errorCode||0),text:String(e.errorText||""),url:String(e.url||"").replace(/([?&](?:username|credential)=)[^&\s]+/gi,"$1[REDACTED]")});
+        const offer=await testPc.createOffer();
+        await testPc.setLocalDescription(offer);
+        timer=setTimeout(finish,timeoutMs||5500);
+      }catch(err){
+        errors.push({code:0,text:String(err?.message||err),url:""});
+        finish();
+      }
+    });
+  }
+  async function runIceSelfTest(show){
+    if(TD.iceTestRunning)return TD.iceTest;
+    TD.iceTestRunning=true;if(show)renderDiag();
+    dlog("INFO","ICE","ICE Self-Test iniciado","Probando host/srflx/relay y TURN forzado",false);
+    try{
+      const ice=await fetchIce(true);
+      const all=await gatherIceCandidates("all",5500);
+      const relay=await gatherIceCandidates("relay",6500);
+      const result={
+        at:Date.now(),resolvedHost:ice.turnResolvedHost||ice.turnHost||"",resolution:ice.turnResolution||"",
+        allTypes:all.types,relayTypes:relay.types,allMs:all.elapsedMs,relayMs:relay.elapsedMs,
+        stunOk:all.types.includes("srflx"),turnOk:all.types.includes("relay"),relayForcedOk:relay.types.includes("relay"),
+        errors:[...(all.errors||[]),...(relay.errors||[])]
+      };
+      TD.iceTest=result;
+      const ok=result.stunOk&&result.turnOk&&result.relayForcedOk;
+      dlog(ok?"INFO":"WARN","ICE","ICE Self-Test "+(ok?"OK":"con fallos"),
+        "STUN="+(result.stunOk?"OK":"FAIL")+" · TURN="+(result.turnOk?"OK":"FAIL")+" · RELAY="+(result.relayForcedOk?"OK":"FAIL")+
+        " · tipos="+result.allTypes.join(",")+" · relayTypes="+result.relayTypes.join(",")+
+        " · host="+result.resolvedHost+(result.errors.length?(" · errores="+result.errors.map(e=>e.code+":"+e.text).join(" | ")):""),!ok);
+      send("diag-tv",{event:"ice-self-test",level:ok?"INFO":"WARN",message:"ICE Self-Test "+(ok?"OK":"FAIL"),result,at:Date.now()});
+      return result;
+    }catch(err){
+      TD.iceTest={at:Date.now(),stunOk:false,turnOk:false,relayForcedOk:false,error:String(err?.message||err)};
+      dlog("ERROR","ICE","ICE Self-Test falló",String(err?.message||err),true);
+      return TD.iceTest;
+    }finally{
+      TD.iceTestRunning=false;if(show||diagPanel.classList.contains("open"))renderDiag();
+    }
   }
 
   async function resetPeer(){
@@ -295,19 +364,24 @@ html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}
     if(trackPlayTimer){clearTimeout(trackPlayTimer);trackPlayTimer=null}
     dlog("INFO","WEBRTC","Peer reiniciado","Transporte anterior cerrado",false);
     pc=null;
+    peerPolicy="all";
     pendingIce=[];
     remoteVideo.srcObject=null;
   }
 
-  async function ensurePeer(){
-    if(pc) return pc;
+  async function ensurePeer(policy){
+    policy=policy==="relay"?"relay":"all";
+    if(pc&&peerPolicy===policy) return pc;
+    if(pc&&peerPolicy!==policy) await resetPeer();
     const ice=await fetchIce();
+    peerPolicy=policy;
     TD.peerAt=performance.now();
-    pc=new RTCPeerConnection({iceServers:ice.iceServers||[]});
-    dlog("INFO","WEBRTC","RTCPeerConnection creado","ICE servers="+(ice.iceServers||[]).length,false);
+    pc=new RTCPeerConnection({iceServers:ice.iceServers||[],iceTransportPolicy:policy});
+    dlog("INFO","WEBRTC","RTCPeerConnection creado","ICE servers="+(ice.iceServers||[]).length+" · policy="+policy,false);
     pc.onicecandidate=e=>{
       if(e.candidate) send("webrtc-ice",{candidate:e.candidate});
     };
+    pc.onicecandidateerror=e=>dlog("WARN","ICE","ICE candidate error","code="+(e.errorCode||"")+" · "+(e.errorText||"")+" · "+(e.url||""),true);
     pc.oniceconnectionstatechange=()=>dlog(pc.iceConnectionState==="failed"?"ERROR":"INFO","ICE","ICE "+pc.iceConnectionState,"",pc.iceConnectionState==="failed");
     pc.onsignalingstatechange=()=>dlog("INFO","WEBRTC","Signaling "+pc.signalingState,"",false);
     pc.onconnectionstatechange=()=>{
@@ -415,6 +489,7 @@ html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}
         document.getElementById("pairedName").textContent=(data.name||"TV")+" · Esperando contenido...";
         transportState.textContent="TV · vinculada · esperando video";
         dlog("INFO","TV","TV vinculada",data.name||"TV",false);
+        setTimeout(()=>runIceSelfTest(false),700);
         return;
       }
       if(type==="media-load"){
@@ -436,7 +511,9 @@ html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}
       if(type==="webrtc-offer"){
         TD.offerAt=performance.now();
         dlog("INFO","WEBRTC","Oferta WebRTC recibida",TD.media?.playId||"",false);
-        const p=await ensurePeer();
+        const policy=data.icePolicy==="relay"?"relay":"all";
+        const p=await ensurePeer(policy);
+        dlog("INFO","WEBRTC","Oferta usando política ICE",policy,false);
         await p.setRemoteDescription(new RTCSessionDescription(data.sdp));
         const answer=await p.createAnswer();
         await p.setLocalDescription(answer);
