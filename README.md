@@ -1,17 +1,33 @@
 # KITKARAOKE TV
 
-Proyecto para la salida de TV y vinculación remota de KITKARAOKE.
+Base oficial del nuevo KITKARAOKE EVENT PLAYER.
+
+## Decisión actual
+
+- **Diseño maestro:** `web/DISEÑO_MAESTRO_FASE_2_1.html`
+- **Motor YouTube:** **KITKARAOKE QUEUE PLAYER V3**
+- **Puerto base V3:** `8769`
+
+## Regla principal
+
+La interfaz nueva se integra sobre el motor V3 probado. No se reemplaza el flujo de reproducción que ya funcionó en Windows:
+
+`VIDEO_ID -> yt-dlp --get-url -> video/audio -> FFmpeg -> navegador local`
+
+El buscador V3 usa `ytsearch` local y no necesita YouTube Data API key.
 
 ## Flujo de trabajo
-- `main`: producción aprobada.
-- `desarrollo`: pruebas y preview en GitHub Pages.
-- Neocities/OVH no se publican desde esta rama de pruebas.
 
-## Objetivo de esta fase
-1. Web del receptor TV.
-2. Pantalla de vinculación por código.
-3. Panel de control de prueba.
-4. Diagnóstico de compatibilidad del navegador de TV.
-5. Preparar el frontend para conectarlo después al backend real en OVH.
+- `main`: base aprobada y cambios incrementales.
+- Cada cambio funcional debe conservar la reproducción YouTube V3.
+- El diseño maestro solo cambia cuando se aprueba explícitamente.
 
-> El motor local yt-dlp/FFmpeg no forma parte de esta web.
+## Estructura inicial
+
+- `web/DISEÑO_MAESTRO_FASE_2_1.html` — referencia visual exacta.
+- `engine_v3/` — documentos, scripts y manifiesto del motor V3.
+- `docs/BASELINE_V3.md` — reglas de integración y no regresión.
+
+## Importante sobre binarios
+
+El paquete V3 contiene Deno, FFmpeg y yt-dlp. `deno.exe` pesa más de 100 MB, por encima del límite normal por archivo de GitHub. El archivo `engine_v3/ENGINE_MANIFEST.md` fija tamaños y SHA-256 exactos para no sustituir accidentalmente el motor probado.
