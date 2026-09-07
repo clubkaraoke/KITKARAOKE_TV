@@ -19,7 +19,7 @@ DB_PATH = DATA_DIR / "kitkaraoke_client.db"
 LICENSE_PEPPER = os.getenv("LICENSE_PEPPER","dev-only-change-me")
 SESSION_TTL = int(os.getenv("SESSION_TTL_SECONDS","2592000"))
 COOKIE_SECURE = os.getenv("COOKIE_SECURE","0") == "1"
-TV_API_BASE = os.getenv("TV_API_BASE","http://host.docker.internal:8791")
+TV_API_BASE = os.getenv("TV_API_BASE","http://host.docker.internal")\nTV_API_HOST = os.getenv("TV_API_HOST","tv1.kitkaraoke.com")
 ENVIRONMENT = os.getenv("ENVIRONMENT","app1")
 DEV_TRIALS = os.getenv("DEV_TRIALS","1") == "1"
 
@@ -209,7 +209,7 @@ def dev_trial():
 def tv_claim(body:TvClaimBody,kit_session:str|None=Cookie(default=None)):
     conn,row=require_session(kit_session)
     payload=json.dumps({"code":body.code,"name":body.name,"controllerId":"app1-"+row["device_id"][:32]}).encode()
-    req=urllib.request.Request(TV_API_BASE+"/api/pair/claim",data=payload,headers={"Content-Type":"application/json"},method="POST")
+    req=urllib.request.Request(TV_API_BASE+"/api/pair/claim",data=payload,headers={"Content-Type":"application/json","Host":TV_API_HOST},method="POST")
     try:
         with urllib.request.urlopen(req,timeout=5) as r:
             data=json.loads(r.read().decode())
