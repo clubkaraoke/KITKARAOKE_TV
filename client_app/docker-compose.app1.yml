@@ -7,7 +7,8 @@ services:
       - .env
     environment:
       DATA_DIR: /data
-      TV_API_BASE: http://host.docker.internal\n      TV_API_HOST: tv1.kitkaraoke.com
+      TV_API_BASE: http://host.docker.internal
+      TV_API_HOST: tv1.kitkaraoke.com
       ENVIRONMENT: app1
       DEV_TRIALS: "1"
     extra_hosts:
