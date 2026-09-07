@@ -18,6 +18,20 @@ html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}
 #audioGate button{font:700 22px system-ui;padding:18px 28px;border:0;border-radius:14px;background:#ec008c;color:#fff}
 #transportState{position:fixed;right:22px;top:20px;z-index:5;font:600 13px system-ui;color:#d7dbe4;
   background:rgba(16,20,28,.72);padding:8px 11px;border-radius:999px}
+#diagBtn{position:fixed;left:18px;top:18px;z-index:30;border:1px solid rgba(255,255,255,.24);border-radius:999px;
+  padding:8px 12px;background:rgba(12,16,24,.72);color:#fff;font:700 12px system-ui;cursor:pointer;backdrop-filter:blur(7px)}
+#diagBtn.bad{background:rgba(170,20,38,.88)} #diagBtn.warn{background:rgba(185,112,0,.88)}
+#diagPanel{position:fixed;inset:0;z-index:60;display:none;background:rgba(4,7,12,.96);color:#e9eef7;
+  font:13px/1.45 ui-monospace,SFMono-Regular,Consolas,monospace;overflow:auto}
+#diagPanel.open{display:block}
+.diag-shell{max-width:1180px;margin:0 auto;padding:18px 18px 34px}
+.diag-head{display:flex;gap:10px;align-items:center;position:sticky;top:0;background:rgba(4,7,12,.97);padding:8px 0 12px;z-index:2}
+.diag-head b{font:800 18px system-ui}.diag-grow{flex:1}
+.diag-action{border:1px solid #3b4558;border-radius:8px;padding:9px 11px;background:#151b26;color:#fff;font:700 12px system-ui;cursor:pointer}
+.diag-action.primary{background:#ec008c;border-color:#ec008c}
+#diagMetrics{white-space:pre-wrap;background:#0c111b;border:1px solid #273043;border-radius:10px;padding:12px;margin-bottom:12px}
+#diagLogs{white-space:pre-wrap;word-break:break-word;background:#070a10;border:1px solid #273043;border-radius:10px;padding:12px;min-height:260px}
+.diag-ok{color:#62df96}.diag-warn{color:#ffd166}.diag-bad{color:#ff7189}
 </style>
 </head>
 <body>
@@ -49,6 +63,20 @@ html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}
 </div>
 <div id="transportState">TV · esperando transporte</div>
 <div id="audioGate"><button id="audioGateBtn">ACTIVAR AUDIO / VIDEO</button></div>
+<button id="diagBtn" type="button">DIAG TV</button>
+<div id="diagPanel" role="dialog" aria-label="Diagnóstico TV">
+  <div class="diag-shell">
+    <div class="diag-head"><b>DIAGNÓSTICO TV · WEBRTC</b><span id="diagState"></span><span class="diag-grow"></span>
+      <button class="diag-action" id="diagRefresh">Actualizar</button>
+      <button class="diag-action primary" id="diagCopy">Copiar TXT</button>
+      <button class="diag-action" id="diagDownload">Descargar .txt</button>
+      <button class="diag-action" id="diagClear">Limpiar</button>
+      <button class="diag-action" id="diagClose">Cerrar</button>
+    </div>
+    <div id="diagMetrics"></div>
+    <div id="diagLogs"></div>
+  </div>
+</div>
 
 <script>
 (async()=>{
@@ -64,15 +92,187 @@ html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}
   const transportState=document.getElementById("transportState");
   const audioGate=document.getElementById("audioGate");
   const audioGateBtn=document.getElementById("audioGateBtn");
+  const diagBtn=document.getElementById("diagBtn");
+  const diagPanel=document.getElementById("diagPanel");
+  const diagState=document.getElementById("diagState");
+  const diagMetrics=document.getElementById("diagMetrics");
+  const diagLogs=document.getElementById("diagLogs");
 
   let session=null;
   let pc=null;
   let pendingIce=[];
   let iceConfig=null;
 
-  function send(type,data){
-    KIT_PAIR.sendReceiver(Object.assign({type},data||{}));
+  const TD={
+    version:"TV-DIAG-1.0",logs:[],stats:{},media:null,offerAt:0,peerAt:0,trackAt:0,playingAt:0,
+    waitAt:0,waitCount:0,stallMs:0,lastStatsAt:0,lastBytes:0,lastDropped:0,lastLost:0,
+    lastFrameAt:0,lastFrameGap:0,frameCount:0,rxToDisplayMs:null,captureToDisplayMs:null,
+    frameWatch:false,warnAt:{},serverVersion:"",startedAt:Date.now()
+  };
+  try{
+    const old=JSON.parse(sessionStorage.getItem("kit_tv_diag")||"[]");
+    if(Array.isArray(old))TD.logs=old.slice(-500);
+  }catch(_){}
+
+  function send(type,data){return KIT_PAIR.sendReceiver(Object.assign({type},data||{}))}
+  function clean(v,max){
+    let x=String(v==null?"":v).replace(/([?&](?:token|key|secret|auth)=)[^&\s]+/gi,"$1[REDACTED]");
+    max=max||1800;return x.length>max?x.slice(0,max)+"…":x;
   }
+  function nowClock(){return new Date().toLocaleTimeString("es-PE",{hour12:false})}
+  function dlog(level,cat,msg,detail,relay){
+    level=String(level||"INFO").toUpperCase();
+    const row={t:nowClock(),ts:Date.now(),level,cat:String(cat||"TV").toUpperCase(),msg:clean(msg),detail:clean(detail,5000),playId:TD.media?.playId||""};
+    TD.logs.push(row);if(TD.logs.length>600)TD.logs.splice(0,TD.logs.length-600);
+    try{sessionStorage.setItem("kit_tv_diag",JSON.stringify(TD.logs))}catch(_){}
+    if(level==="ERROR"){diagBtn.classList.add("bad");diagBtn.classList.remove("warn")}
+    else if(level==="WARN"&&!diagBtn.classList.contains("bad"))diagBtn.classList.add("warn");
+    if(relay!==false&&(level==="ERROR"||level==="WARN")){
+      send("diag-tv",{event:"log",level,cat:row.cat,message:row.msg,detail:row.detail,playId:row.playId,kind:TD.media?.kind||"",title:TD.media?.title||"",at:row.ts});
+    }
+    if(diagPanel.classList.contains("open"))renderDiag();
+    return row;
+  }
+  function warnRate(key,msg,detail,wait){
+    const n=Date.now(),last=TD.warnAt[key]||0;if(n-last<(wait||7000))return;
+    TD.warnAt[key]=n;dlog("WARN","PERF",msg,detail);
+  }
+  function netInfo(){
+    const n=navigator.connection||navigator.mozConnection||navigator.webkitConnection||{};
+    return {type:n.type||"",effectiveType:n.effectiveType||"",downlink:n.downlink||0,rtt:n.rtt||0,saveData:!!n.saveData};
+  }
+  function diagSnapshot(){
+    const q=(()=>{try{return remoteVideo.getVideoPlaybackQuality?remoteVideo.getVideoPlaybackQuality():null}catch(_){return null}})();
+    return {
+      diagVersion:TD.version,serverVersion:TD.serverVersion,receiver:session?.receiverId?session.receiverId.slice(0,8):"",
+      media:TD.media||null,peer:pc?.connectionState||"",ice:pc?.iceConnectionState||"",signaling:pc?.signalingState||"",
+      video:{width:remoteVideo.videoWidth||0,height:remoteVideo.videoHeight||0,readyState:remoteVideo.readyState,networkState:remoteVideo.networkState,
+        paused:remoteVideo.paused,muted:remoteVideo.muted,volume:remoteVideo.volume,currentTime:Number(remoteVideo.currentTime||0),
+        totalFrames:q?.totalVideoFrames||0,droppedFrames:q?.droppedVideoFrames||0,corruptedFrames:q?.corruptedVideoFrames||0},
+      stats:TD.stats,network:netInfo(),
+      device:{ua:navigator.userAgent,platform:navigator.platform||"",cpu:navigator.hardwareConcurrency||0,memory:navigator.deviceMemory||0,
+        screen:screen.width+"x"+screen.height,dpr:window.devicePixelRatio||1,visibility:document.visibilityState},
+      counters:{waitCount:TD.waitCount,stallMs:Math.round(TD.stallMs),frameCount:TD.frameCount,lastFrameGapMs:Math.round(TD.lastFrameGap||0)}
+    };
+  }
+  function metric(v,suffix){return v==null||!Number.isFinite(Number(v))?"—":Number(v).toFixed(v<10?2:1)+(suffix||"")}
+  function renderDiag(){
+    const x=diagSnapshot(),s=x.stats||{},m=x.media||{};
+    const severity=(pc?.connectionState==="failed"||pc?.connectionState==="disconnected")?"bad":
+      ((s.rttMs||0)>220||(s.jitterBufferVideoMs||0)>150||(s.droppedDelta||0)>3?"warn":"ok");
+    diagState.className="diag-"+severity;
+    diagState.textContent=" · "+(pc?.connectionState||"sin peer")+" / ICE "+(pc?.iceConnectionState||"—");
+    diagMetrics.textContent=[
+      "TV DIAG: "+TD.version+" · backend "+(TD.serverVersion||"—"),
+      "Media: "+(m.playId||"—")+" · "+(m.kind||"—")+" · "+(m.artist||"")+" — "+(m.title||""),
+      "Resolución recibida: "+x.video.width+"x"+x.video.height+" · FPS "+metric(s.fps)+" · frames dropped "+(s.framesDropped??x.video.droppedFrames),
+      "WebRTC: peer="+x.peer+" · ICE="+x.ice+" · signaling="+x.signaling+" · RTT="+metric(s.rttMs," ms"),
+      "Red: jitter video="+metric(s.jitterVideoMs," ms")+" · jitter audio="+metric(s.jitterAudioMs," ms")+" · pérdida="+(s.packetsLost??"—")+" · bitrate="+metric(s.bitrateKbps," kbps"),
+      "Buffer receptor: video="+metric(s.jitterBufferVideoMs," ms")+" · audio="+metric(s.jitterBufferAudioMs," ms")+" · delta A/V="+metric(s.avBufferDeltaMs," ms"),
+      "Decode: "+metric(s.decodeMs," ms/frame")+" · freezes="+(s.freezeCount??"—")+" · total freeze="+metric(s.freezeDurationMs," ms"),
+      "Inicio TV: media-load→playing="+metric(s.startupMs," ms")+" · offer→connected="+metric(s.peerConnectMs," ms"),
+      "Frame: receive→display="+metric(TD.rxToDisplayMs," ms")+" · capture→display(est.)="+metric(TD.captureToDisplayMs," ms")+" · último gap="+metric(TD.lastFrameGap," ms"),
+      "Eventos: waiting="+TD.waitCount+" · tiempo esperando="+Math.round(TD.stallMs)+" ms",
+      "Red dispositivo: "+JSON.stringify(x.network),
+      "Dispositivo: "+x.device.platform+" · CPU "+x.device.cpu+" · RAM hint "+x.device.memory+"GB · pantalla "+x.device.screen+" · DPR "+x.device.dpr,
+      "UA: "+x.device.ua
+    ].join("\n");
+    diagLogs.textContent=TD.logs.slice(-250).map(l=>l.t+"  "+l.level.padEnd(5)+" "+l.cat.padEnd(8)+" "+(l.playId?("["+l.playId+"] "):"")+l.msg+(l.detail?("\n    "+l.detail):"")).join("\n");
+    diagLogs.scrollTop=diagLogs.scrollHeight;
+  }
+  function diagText(){
+    const x=diagSnapshot();
+    return [
+      "KITKARAOKE · DIAGNÓSTICO TV",
+      "Fecha: "+new Date().toLocaleString("es-PE"),
+      "Versión: "+TD.version+" · backend "+(TD.serverVersion||"—"),
+      "IMPORTANTE: no incluye tokens ni claves.",
+      "SNAPSHOT:",
+      JSON.stringify(x,null,2),
+      "------------------------------------------------------------",
+      ...TD.logs.map(l=>l.t+"  "+l.level.padEnd(5)+" "+l.cat.padEnd(8)+" "+(l.playId?("PLAY="+l.playId+"  "):"")+l.msg+(l.detail?(" | "+l.detail):""))
+    ].join("\n");
+  }
+  async function copyDiag(){
+    const t=diagText();
+    try{await navigator.clipboard.writeText(t);dlog("INFO","UI","Diagnóstico copiado","TXT copiado al portapapeles",false)}
+    catch(_){const ta=document.createElement("textarea");ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand("copy");ta.remove()}
+  }
+  function downloadDiag(){
+    const blob=new Blob([diagText()],{type:"text/plain;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");
+    a.href=url;a.download="kitkaraoke-tv-diagnostico-"+new Date().toISOString().replace(/[:.]/g,"-")+".txt";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }
+  function toggleDiag(on){diagPanel.classList.toggle("open",on==null?!diagPanel.classList.contains("open"):!!on);if(diagPanel.classList.contains("open"))renderDiag()}
+  diagBtn.onclick=()=>toggleDiag();
+  document.getElementById("diagClose").onclick=()=>toggleDiag(false);
+  document.getElementById("diagRefresh").onclick=()=>renderDiag();
+  document.getElementById("diagCopy").onclick=copyDiag;
+  document.getElementById("diagDownload").onclick=downloadDiag;
+  document.getElementById("diagClear").onclick=()=>{TD.logs=[];TD.warnAt={};diagBtn.className="";try{sessionStorage.removeItem("kit_tv_diag")}catch(_){}dlog("INFO","UI","Logs TV limpiados","",false);renderDiag()};
+  document.addEventListener("keydown",e=>{if((e.key||"").toLowerCase()==="d")toggleDiag()});
+  window.addEventListener("error",e=>dlog("ERROR","BROWSER",e.message||"Error JavaScript",(e.filename||"")+" "+(e.lineno||0)+":"+(e.colno||0)+"\n"+(e.error?.stack||"")));
+  window.addEventListener("unhandledrejection",e=>dlog("ERROR","BROWSER","Promesa no controlada",String(e.reason?.stack||e.reason||"")));
+
+  async function sampleStats(){
+    if(!pc||pc.connectionState==="closed")return;
+    try{
+      const reports=await pc.getStats();let v=null,a=null,pair=null,transport=null;
+      reports.forEach(r=>{
+        if(r.type==="inbound-rtp"&&!r.isRemote){
+          const kind=r.kind||r.mediaType;if(kind==="video")v=r;if(kind==="audio")a=r;
+        }else if(r.type==="transport")transport=r;
+        else if(r.type==="candidate-pair"&&(r.selected||r.nominated)&&r.state==="succeeded")pair=r;
+      });
+      if(!pair&&transport?.selectedCandidatePairId)pair=reports.get(transport.selectedCandidatePairId)||null;
+      const jb=r=>r&&r.jitterBufferEmittedCount?1000*Number(r.jitterBufferDelay||0)/Number(r.jitterBufferEmittedCount):null;
+      const now=performance.now(),bytes=Number(v?.bytesReceived||0)+Number(a?.bytesReceived||0),dt=TD.lastStatsAt?now-TD.lastStatsAt:0;
+      const bitrate=dt>0&&bytes>=TD.lastBytes?((bytes-TD.lastBytes)*8/dt):0;
+      const dropped=Number(v?.framesDropped||0),lost=Number(v?.packetsLost||0);
+      TD.stats={
+        fps:Number(v?.framesPerSecond||0),framesDecoded:Number(v?.framesDecoded||0),framesDropped:dropped,droppedDelta:Math.max(0,dropped-TD.lastDropped),
+        packetsLost:lost,lostDelta:Math.max(0,lost-TD.lastLost),packetsReceived:Number(v?.packetsReceived||0)+Number(a?.packetsReceived||0),
+        jitterVideoMs:v?.jitter!=null?Number(v.jitter)*1000:null,jitterAudioMs:a?.jitter!=null?Number(a.jitter)*1000:null,
+        jitterBufferVideoMs:jb(v),jitterBufferAudioMs:jb(a),avBufferDeltaMs:(jb(v)!=null&&jb(a)!=null)?jb(v)-jb(a):null,
+        decodeMs:v?.framesDecoded?1000*Number(v.totalDecodeTime||0)/Number(v.framesDecoded):null,
+        freezeCount:v?.freezeCount!=null?Number(v.freezeCount):null,freezeDurationMs:v?.totalFreezesDuration!=null?1000*Number(v.totalFreezesDuration):null,
+        rttMs:pair?.currentRoundTripTime!=null?1000*Number(pair.currentRoundTripTime):null,
+        bitrateKbps:bitrate||null,availableIncomingKbps:pair?.availableIncomingBitrate?Number(pair.availableIncomingBitrate)/1000:null,
+        startupMs:TD.playingAt&&TD.media?.loadPerf?TD.playingAt-TD.media.loadPerf:null,
+        peerConnectMs:TD.stats.peerConnectMs||null
+      };
+      TD.lastStatsAt=now;TD.lastBytes=bytes;TD.lastDropped=dropped;TD.lastLost=lost;
+      if((TD.stats.droppedDelta||0)>3)warnRate("drop","Frames descartados en TV","+"+TD.stats.droppedDelta+" · total "+dropped);
+      if((TD.stats.lostDelta||0)>2)warnRate("loss","Pérdida de paquetes WebRTC","+"+TD.stats.lostDelta+" · total "+lost);
+      if((TD.stats.rttMs||0)>250)warnRate("rtt","RTT alto en TV",metric(TD.stats.rttMs," ms"));
+      if((TD.stats.jitterBufferVideoMs||0)>180)warnRate("jitterbuf","Buffer de jitter alto",metric(TD.stats.jitterBufferVideoMs," ms"));
+      if(Date.now()-(TD.lastReport||0)>10000){
+        TD.lastReport=Date.now();
+        send("diag-tv",{event:"stats",level:"INFO",playId:TD.media?.playId||"",kind:TD.media?.kind||"",title:TD.media?.title||"",
+          metrics:TD.stats,video:{width:remoteVideo.videoWidth||0,height:remoteVideo.videoHeight||0,readyState:remoteVideo.readyState},
+          peer:pc.connectionState,ice:pc.iceConnectionState,at:Date.now()});
+      }
+      if(diagPanel.classList.contains("open"))renderDiag();
+    }catch(err){warnRate("stats","No se pudieron leer estadísticas WebRTC",String(err?.message||err),12000)}
+  }
+  setInterval(sampleStats,1500);
+
+  function watchFrames(){
+    if(TD.frameWatch||!remoteVideo.requestVideoFrameCallback)return;
+    TD.frameWatch=true;
+    const frame=(now,meta)=>{
+      TD.frameCount++;
+      if(TD.lastFrameAt){
+        const gap=now-TD.lastFrameAt;TD.lastFrameGap=gap;
+        if(gap>280&&remoteVideo.readyState>=2&&!remoteVideo.paused)warnRate("framegap","Gap de frames detectado",Math.round(gap)+" ms sin frame nuevo",3000);
+      }
+      TD.lastFrameAt=now;
+      if(meta?.receiveTime!=null&&meta?.expectedDisplayTime!=null)TD.rxToDisplayMs=Math.max(0,meta.expectedDisplayTime-meta.receiveTime);
+      if(meta?.captureTime!=null&&meta?.expectedDisplayTime!=null)TD.captureToDisplayMs=Math.max(0,meta.expectedDisplayTime-meta.captureTime);
+      remoteVideo.requestVideoFrameCallback(frame);
+    };
+    remoteVideo.requestVideoFrameCallback(frame);
+  }
+
 
   async function fetchIce(){
     if(iceConfig) return iceConfig;
@@ -80,11 +280,13 @@ html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}
     const j=await r.json();
     if(!r.ok||!j.ok) throw new Error(j.detail||"No se pudo obtener ICE");
     iceConfig=j;
+    dlog("INFO","WEBRTC","Configuración ICE recibida","TURN="+(j.turn?"sí":"no")+" · servidores="+(j.iceServers||[]).length,false);
     return j;
   }
 
   async function resetPeer(){
     if(pc){try{pc.close()}catch(_){}}
+    dlog("INFO","WEBRTC","Peer reiniciado","Transporte anterior cerrado",false);
     pc=null;
     pendingIce=[];
     remoteVideo.srcObject=null;
@@ -93,16 +295,33 @@ html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}
   async function ensurePeer(){
     if(pc) return pc;
     const ice=await fetchIce();
+    TD.peerAt=performance.now();
     pc=new RTCPeerConnection({iceServers:ice.iceServers||[]});
+    dlog("INFO","WEBRTC","RTCPeerConnection creado","ICE servers="+(ice.iceServers||[]).length,false);
     pc.onicecandidate=e=>{
       if(e.candidate) send("webrtc-ice",{candidate:e.candidate});
     };
+    pc.oniceconnectionstatechange=()=>dlog(pc.iceConnectionState==="failed"?"ERROR":"INFO","ICE","ICE "+pc.iceConnectionState,"",pc.iceConnectionState==="failed");
+    pc.onsignalingstatechange=()=>dlog("INFO","WEBRTC","Signaling "+pc.signalingState,"",false);
     pc.onconnectionstatechange=()=>{
       transportState.textContent="TV · WebRTC "+pc.connectionState;
-      send("media-state",{state:"peer-"+pc.connectionState});
+      if(pc.connectionState==="connected"){
+        const ms=TD.offerAt?performance.now()-TD.offerAt:null;
+        TD.stats.peerConnectMs=ms;
+        dlog("INFO","WEBRTC","Peer conectado",ms!=null?("offer→connected "+Math.round(ms)+" ms"):"",false);
+      }else if(pc.connectionState==="failed"||pc.connectionState==="disconnected"){
+        dlog(pc.connectionState==="failed"?"ERROR":"WARN","WEBRTC","Peer "+pc.connectionState,
+          "ICE="+pc.iceConnectionState+" · signaling="+pc.signalingState,true);
+      }else dlog("INFO","WEBRTC","Peer "+pc.connectionState,"",false);
+      send("media-state",{state:"peer-"+pc.connectionState,playId:TD.media?.playId||""});
     };
     pc.ontrack=async e=>{
       const stream=e.streams&&e.streams[0]?e.streams[0]:new MediaStream([e.track]);
+      TD.trackAt=performance.now();
+      dlog("INFO","WEBRTC","Track recibido",e.track.kind+" · stream tracks="+stream.getTracks().map(t=>t.kind+":"+t.readyState).join(", "),false);
+      e.track.onmute=()=>dlog("WARN","WEBRTC","Track "+e.track.kind+" mute","",true);
+      e.track.onunmute=()=>dlog("INFO","WEBRTC","Track "+e.track.kind+" unmute","",false);
+      e.track.onended=()=>dlog("WARN","WEBRTC","Track "+e.track.kind+" ended","",true);
       remoteVideo.srcObject=stream;
       remoteStage.style.display="block";
       pairStage.style.display="none";
@@ -111,10 +330,12 @@ html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}
       try{
         await remoteVideo.play();
         audioGate.style.display="none";
-        send("media-state",{state:"playing"});
+        watchFrames();
+        send("media-state",{state:"playing",playId:TD.media?.playId||""});
       }catch(err){
         audioGate.style.display="grid";
-        send("media-state",{state:"autoplay-blocked"});
+        dlog("WARN","VIDEO","Autoplay bloqueado",String(err?.message||err),true);
+        send("media-state",{state:"autoplay-blocked",playId:TD.media?.playId||""});
       }
     };
     return pc;
@@ -129,13 +350,36 @@ html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}
     }catch(_){}
   };
 
-  remoteVideo.addEventListener("playing",()=>send("media-state",{state:"playing"}));
-  remoteVideo.addEventListener("pause",()=>send("media-state",{state:"paused"}));
-  remoteVideo.addEventListener("error",()=>send("media-error",{message:"El receptor no pudo reproducir el stream WebRTC"}));
+  remoteVideo.addEventListener("playing",()=>{
+    const now=performance.now();
+    if(!TD.playingAt)TD.playingAt=now;
+    if(TD.waitAt){TD.stallMs+=now-TD.waitAt;TD.waitAt=0}
+    const startup=TD.media?.loadPerf?Math.round(now-TD.media.loadPerf):null;
+    dlog("INFO","VIDEO","TV reproduciendo",startup!=null?("media-load→playing "+startup+" ms"):"",false);
+    watchFrames();send("media-state",{state:"playing",playId:TD.media?.playId||""});
+  });
+  remoteVideo.addEventListener("waiting",()=>{
+    if(!TD.waitAt)TD.waitAt=performance.now();TD.waitCount++;
+    dlog("WARN","VIDEO","Buffering / waiting","t="+Number(remoteVideo.currentTime||0).toFixed(3)+" · ready="+remoteVideo.readyState,true);
+  });
+  remoteVideo.addEventListener("stalled",()=>dlog("WARN","VIDEO","Stream stalled","networkState="+remoteVideo.networkState,true));
+  remoteVideo.addEventListener("loadedmetadata",()=>dlog("INFO","VIDEO","Metadata recibida",(remoteVideo.videoWidth||0)+"x"+(remoteVideo.videoHeight||0)+" · ready="+remoteVideo.readyState,false));
+  remoteVideo.addEventListener("canplay",()=>dlog("INFO","VIDEO","Canplay","readyState="+remoteVideo.readyState,false));
+  remoteVideo.addEventListener("resize",()=>dlog("INFO","VIDEO","Resolución del stream",(remoteVideo.videoWidth||0)+"x"+(remoteVideo.videoHeight||0),false));
+  remoteVideo.addEventListener("pause",()=>{dlog("INFO","VIDEO","TV pausada","t="+Number(remoteVideo.currentTime||0).toFixed(3),false);send("media-state",{state:"paused",playId:TD.media?.playId||""})});
+  remoteVideo.addEventListener("emptied",()=>dlog("INFO","VIDEO","Media emptied","",false));
+  remoteVideo.addEventListener("error",()=>{
+    const err=remoteVideo.error;
+    const msg="El receptor no pudo reproducir el stream WebRTC"+(err?(" · MediaError "+err.code+" "+(err.message||"")):"");
+    dlog("ERROR","VIDEO",msg,"ready="+remoteVideo.readyState+" · network="+remoteVideo.networkState,true);
+    send("media-error",{message:msg,playId:TD.media?.playId||""});
+  });
 
   try{
     session=await KIT_PAIR.createReceiver();
     code.textContent=session.code;
+    try{const vr=await fetch("/api/version",{cache:"no-store"});const vj=await vr.json();TD.serverVersion=vj.version||""}catch(_){}
+    dlog("INFO","TV","Receptor iniciado","receiver="+session.receiverId.slice(0,8)+" · "+TD.serverVersion,false);
     const tick=()=>{
       const sec=Math.max(0,Math.ceil((session.expiresAt-Date.now())/1000));
       exp.textContent=sec?"Código válido por "+sec+" s":"Código vencido · recarga para generar otro";
@@ -145,6 +389,7 @@ html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}
     KIT_PAIR.on(async(type,data)=>{
       if(type==="ws"){
         net.textContent=data.status==="connected"?"Servidor conectado ✓":data.status==="error"?"Error de conexión":"Reconectando...";
+        dlog(data.status==="error"?"ERROR":data.status==="disconnected"?"WARN":"INFO","WS","WebSocket "+data.status,"",data.status!=="connected");
         return;
       }
       if(type==="paired"){
@@ -152,12 +397,16 @@ html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}
         document.getElementById("paired").classList.remove("hidden");
         document.getElementById("pairedName").textContent=(data.name||"TV")+" · Esperando contenido...";
         transportState.textContent="TV · vinculada · esperando video";
+        dlog("INFO","TV","TV vinculada",data.name||"TV",false);
         return;
       }
       if(type==="media-load"){
         mediaTitle.textContent=data.title||"";
         mediaArtist.textContent=data.artist||"";
+        TD.media={playId:data.playId||"",title:data.title||"",artist:data.artist||"",kind:data.kind||"",duration:Number(data.duration||0),loadAt:Date.now(),loadPerf:performance.now()};
+        TD.playingAt=0;TD.offerAt=0;TD.waitAt=0;TD.waitCount=0;TD.stallMs=0;TD.lastFrameAt=0;TD.lastFrameGap=0;TD.frameCount=0;
         transportState.textContent="TV · preparando "+(data.title||"contenido");
+        dlog("INFO","MEDIA","Media-load recibido",(TD.media.playId?TD.media.playId+" · ":"")+(TD.media.kind||"")+" · duración "+TD.media.duration+" s",false);
         return;
       }
       if(type==="transport-reset"){
@@ -166,6 +415,8 @@ html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}
         return;
       }
       if(type==="webrtc-offer"){
+        TD.offerAt=performance.now();
+        dlog("INFO","WEBRTC","Oferta WebRTC recibida",TD.media?.playId||"",false);
         const p=await ensurePeer();
         await p.setRemoteDescription(new RTCSessionDescription(data.sdp));
         const answer=await p.createAnswer();
@@ -173,20 +424,21 @@ html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}
         send("webrtc-answer",{sdp:p.localDescription});
         while(pendingIce.length){
           const cand=pendingIce.shift();
-          try{await p.addIceCandidate(cand)}catch(_){}
+          try{await p.addIceCandidate(cand)}catch(err){dlog("WARN","ICE","ICE pendiente rechazado",String(err?.message||err),true)}
         }
         return;
       }
       if(type==="webrtc-ice"&&data.candidate){
         if(pc&&pc.remoteDescription){
-          try{await pc.addIceCandidate(data.candidate)}catch(_){}
+          try{await pc.addIceCandidate(data.candidate)}catch(err){dlog("WARN","ICE","ICE candidato rechazado",String(err?.message||err),true)}
         }else{
           pendingIce.push(data.candidate);
         }
         return;
       }
       if(type==="media-control"){
-        if(data.action==="play"){try{await remoteVideo.play()}catch(_){audioGate.style.display="grid"}}
+        dlog("INFO","CONTROL","Control "+data.action,(data.value!=null?"value="+data.value:""),false);
+        if(data.action==="play"){try{await remoteVideo.play()}catch(err){audioGate.style.display="grid";dlog("WARN","VIDEO","Play bloqueado",String(err?.message||err),true)}}
         if(data.action==="pause") remoteVideo.pause();
         if(data.action==="stop"){
           remoteVideo.pause();
@@ -201,6 +453,7 @@ html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}
       }
     });
   }catch(e){
+    dlog("ERROR","TV","Error al iniciar receptor",String(e?.stack||e),true);
     document.getElementById("waiting").classList.add("hidden");
     document.getElementById("err").classList.remove("hidden");
     transportState.textContent="TV · error de receptor";

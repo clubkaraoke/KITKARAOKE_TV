@@ -47,7 +47,7 @@ redis = Redis.from_url(REDIS_URL, decode_responses=True)
 receiver_sockets: Dict[str, WebSocket] = {}
 controller_sockets: Dict[str, WebSocket] = {}
 
-RECEIVER_TO_CONTROLLER = {"webrtc-answer", "webrtc-ice", "media-state", "media-error"}
+RECEIVER_TO_CONTROLLER = {"webrtc-answer", "webrtc-ice", "media-state", "media-error", "diag-tv"}
 CONTROLLER_TO_RECEIVER = {"webrtc-offer", "webrtc-ice", "media-load", "media-control", "transport-reset"}
 
 
