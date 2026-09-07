@@ -1,0 +1,15 @@
+FROM python:3.12-slim
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY app ./app
+COPY assets ./assets
+COPY tv ./tv
+COPY control ./control
+COPY diagnostico ./diagnostico
+COPY index.html ./index.html
+RUN useradd --create-home --uid 10001 kitkaraoke && chown -R kitkaraoke:kitkaraoke /app
+USER kitkaraoke
+EXPOSE 8000
+CMD ["uvicorn","app.main:app","--host","0.0.0.0","--port","8000","--proxy-headers","--forwarded-allow-ips=*"]
