@@ -1,0 +1,10 @@
+KITKARAOKE V3 · SANDBOX / SELF-TEST
+[PASS] CDP real de 3 canciones · 3 registros
+[PASS] CDP TOP 50 · 50 registros
+[PASS] Parser get-url 1 stream
+[PASS] Parser get-url 2 streams
+[PASS] FFmpeg recibe dos inputs
+[PASS] Reconnect se aplica a ambos inputs
+[PASS] Mux real video+audio -> fMP4 · 64204 bytes
+[PASS] fMP4 contiene video y audio · audio,video
+SELF-TEST: PASS · pipeline local validado
