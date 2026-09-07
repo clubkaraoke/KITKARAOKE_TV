@@ -1,0 +1,3312 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>KITKARAOKE EVENT PLAYER V5.2 WEB — Prototipo</title>
+<style>
+/* ================================================================
+   KITKARAOKE EVENT PLAYER V5.2 WEB — PROTOTIPO NAVEGABLE
+   ----------------------------------------------------------------
+   BLOQUE 1 / CSS
+   Tokens · Shell · Panel DJ · Cola · Player · TV · QR · Modales
+   ================================================================ */
+
+/* ---------- TOKENS ---------- */
+:root{
+  --bg:#f1f2f5;
+  --surface:#ffffff;
+  --surface-2:#f8f9fb;
+  --surface-3:#eef0f4;
+  --line:#e3e6ec;
+  --line-2:#d3d8e0;
+  --ink:#14161b;
+  --ink-2:#5c6472;
+  --ink-3:#8b93a2;
+  --brand:#e5007e;
+  --brand-ink:#b30063;
+  --brand-soft:#fdeaf4;
+  --cyan:#0a9bbd;
+  --cyan-soft:#e5f6fa;
+  --ok:#12a150;
+  --ok-soft:#e6f6ec;
+  --warn:#c98a00;
+  --warn-soft:#fdf4e0;
+  --err:#d92d20;
+  --err-soft:#fdecea;
+  --r-s:8px;
+  --r-m:12px;
+  --r-l:16px;
+  --sh-1:0 1px 2px rgba(20,22,27,.05);
+  --sh-2:0 2px 6px rgba(20,22,27,.06), 0 1px 2px rgba(20,22,27,.04);
+  --sh-3:0 18px 48px rgba(20,22,27,.16);
+  --rail:74px;
+  --queue:334px;
+  --preview:372px;
+  --font:"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --strong-bg:#14161b;--strong-fg:#ffffff;--toast-bg:#14161b;--toast-fg:#ffffff;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);
+  font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased;overflow:hidden;
+}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+:focus-visible{outline:2px solid var(--cyan);outline-offset:2px;border-radius:6px}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:#cfd4dd;border-radius:20px;border:3px solid transparent;background-clip:content-box}
+::-webkit-scrollbar-thumb:hover{background:#b6bdc9;background-clip:content-box;border:3px solid transparent}
+.num{font-variant-numeric:tabular-nums}
+
+/* ---------- BARRA DE DESARROLLO ---------- */
+#devbar{
+  height:38px;display:flex;align-items:center;gap:14px;padding:0 14px;
+  background:#101218;color:#c9cedb;font-size:11.5px;letter-spacing:.02em;
+}
+#devbar .dev-tag{display:flex;align-items:center;gap:7px;font-weight:600;color:#fff}
+#devbar .dev-dot{width:7px;height:7px;border-radius:50%;background:var(--brand);box-shadow:0 0 0 3px rgba(229,0,126,.22)}
+#devbar .dev-sep{width:1px;height:18px;background:#2a2f3b}
+.devswitch{display:flex;gap:3px;background:#1b1f28;padding:3px;border-radius:8px}
+.devswitch button{padding:4px 11px;border-radius:6px;color:#aeb6c6;font-size:11.5px;font-weight:600;letter-spacing:.03em}
+.devswitch button:hover{color:#fff;background:#252b36}
+.devswitch button.on{background:var(--brand);color:#fff}
+#devbar .spacer{flex:1}
+.devbtn{padding:5px 11px;border-radius:7px;background:#1b1f28;color:#d6dbe6;font-size:11.5px;font-weight:600;border:1px solid #2a2f3b}
+.devbtn:hover{background:#252b36;color:#fff}
+.devbtn.accent{background:linear-gradient(180deg,#ff2a9a,#e5007e);border-color:#ff56ae;color:#fff}
+.devbtn.accent:hover{filter:brightness(1.07)}
+
+/* ---------- VISTAS ---------- */
+.view{display:none;height:calc(100vh - 38px);height:calc(100dvh - 38px)}
+.view.on{display:flex;flex-direction:column}
+
+/* ================= PANEL DJ ================= */
+.topbar{
+  height:58px;flex:0 0 58px;background:var(--surface);border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:16px;padding:0 16px;
+}
+.brand{display:flex;align-items:center;gap:10px;padding-right:16px;border-right:1px solid var(--line)}
+.brand-mark{
+  width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-size:17px;
+  background:linear-gradient(150deg,#ff3fa8,#e5007e 62%,#a80060);box-shadow:0 3px 10px rgba(229,0,126,.32)
+}
+.brand-text{line-height:1.1}
+.brand-name{font-size:14.5px;font-weight:700;letter-spacing:-.015em}
+.brand-name span{color:var(--brand)}
+.brand-sub{font-size:10.5px;color:var(--ink-3);letter-spacing:.04em;margin-top:2px}
+.ver-chip{
+  font-size:10.5px;font-weight:700;color:var(--cyan);background:var(--cyan-soft);
+  border:1px solid #c7e9f2;padding:3px 7px;border-radius:6px;letter-spacing:.04em;
+}
+.tvpill{
+  display:flex;align-items:center;gap:8px;height:34px;padding:0 12px;border-radius:9px;
+  background:var(--surface-2);border:1px solid var(--line);font-size:12.5px;font-weight:600;color:var(--ink-2);
+}
+.tvpill .dot{width:8px;height:8px;border-radius:50%;background:#c3c9d4}
+.tvpill.live{background:var(--ok-soft);border-color:#bfe6cd;color:#0d7a3d}
+.tvpill.live .dot{background:var(--ok);box-shadow:0 0 0 3px rgba(18,161,80,.18);animation:pulse 2.4s infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 6px rgba(18,161,80,0)}}
+.topbar .grow{flex:1}
+.topbar-actions{display:flex;align-items:center;gap:8px}
+.mode-badge{
+  font-size:11px;font-weight:700;letter-spacing:.05em;padding:5px 10px;border-radius:7px;
+  background:var(--brand-soft);color:var(--brand-ink);border:1px solid #f7c9e2;
+}
+.mode-badge.casa{background:var(--cyan-soft);color:#07708a;border-color:#c7e9f2}
+
+/* ---------- BOTONES ---------- */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;height:34px;padding:0 13px;
+  border-radius:9px;background:var(--surface);border:1px solid var(--line-2);
+  font-size:12.5px;font-weight:600;color:var(--ink);white-space:nowrap;
+  transition:background .13s,border-color .13s,transform .08s;
+}
+.btn:hover{background:var(--surface-2);border-color:#bcc3ce}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff;box-shadow:0 2px 8px rgba(229,0,126,.28)}
+.btn.primary:hover{background:#f5108d;border-color:#f5108d}
+.btn.tech{background:var(--cyan);border-color:var(--cyan);color:#fff}
+.btn.tech:hover{background:#0cb0d6;border-color:#0cb0d6}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--ink-2)}
+.btn.ghost:hover{background:var(--surface-3);color:var(--ink)}
+.btn.danger{color:var(--err);border-color:#f3c9c5}
+.btn.danger:hover{background:var(--err-soft)}
+.btn.sm{height:28px;padding:0 10px;font-size:11.5px;border-radius:7px}
+.btn.xs{height:25px;padding:0 8px;font-size:11px;border-radius:6px}
+.btn.icon{width:34px;padding:0}
+.btn.icon.sm{width:28px}
+.btn[disabled]{opacity:.45;pointer-events:none}
+.btn svg{width:15px;height:15px;flex:0 0 auto}
+.btn.sm svg,.btn.xs svg{width:13px;height:13px}
+
+/* ---------- SHELL ---------- */
+.shell{flex:1;display:grid;grid-template-columns:var(--rail) minmax(0,1fr) var(--queue);min-height:0}
+.shell.with-preview{grid-template-columns:var(--rail) minmax(0,1fr) var(--preview) var(--queue)}
+
+/* ---------- RAIL ---------- */
+.rail{
+  background:var(--surface);border-right:1px solid var(--line);
+  display:flex;flex-direction:column;align-items:center;padding:10px 0;gap:3px;
+}
+.rail-item{
+  width:60px;padding:9px 2px 7px;border-radius:11px;display:grid;justify-items:center;gap:4px;
+  color:var(--ink-3);font-size:9.5px;font-weight:700;letter-spacing:.03em;position:relative;
+  transition:background .13s,color .13s;
+}
+.rail-item svg{width:20px;height:20px}
+.rail-item:hover{background:var(--surface-3);color:var(--ink-2)}
+.rail-item.on{background:var(--brand-soft);color:var(--brand-ink)}
+.rail-item.on::before{content:"";position:absolute;left:-11px;top:12px;bottom:12px;width:3px;border-radius:0 3px 3px 0;background:var(--brand)}
+.rail-badge{
+  position:absolute;top:4px;right:6px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;
+  background:var(--brand);color:#fff;font-size:10px;font-weight:700;display:none;place-items:center;
+}
+.rail-badge.show{display:grid}
+.rail .grow{flex:1}
+
+/* ---------- ÁREA DE TRABAJO ---------- */
+.work{min-width:0;overflow:hidden;display:flex;flex-direction:column}
+.sec{display:none;flex:1;min-height:0;flex-direction:column}
+.sec.on{display:flex}
+.sec-head{
+  padding:16px 20px 12px;display:flex;align-items:flex-end;gap:14px;border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,var(--surface),var(--surface-2));
+}
+.sec-title{font-size:17px;font-weight:700;letter-spacing:-.02em}
+.sec-desc{font-size:12px;color:var(--ink-3);margin-top:2px}
+.sec-head .grow{flex:1}
+.sec-body{flex:1;min-height:0;overflow:auto;padding:14px 20px 20px}
+
+/* ---------- BUSCADOR ---------- */
+.searchwrap{padding:16px 20px;background:var(--surface);border-bottom:1px solid var(--line)}
+.searchbox{position:relative;display:flex;align-items:center}
+.searchbox svg.mag{position:absolute;left:15px;width:19px;height:19px;color:var(--ink-3)}
+.searchbox input{
+  width:100%;height:50px;padding:0 122px 0 46px;border-radius:13px;
+  border:1.5px solid var(--line-2);background:var(--surface-2);font-size:15.5px;font-weight:500;
+  transition:border-color .15s,background .15s,box-shadow .15s;
+}
+.searchbox input::placeholder{color:var(--ink-3);font-weight:400}
+.searchbox input:focus{outline:none;border-color:var(--brand);background:#fff;box-shadow:0 0 0 4px rgba(229,0,126,.1)}
+.searchbox .kbd{position:absolute;right:14px;display:flex;gap:6px;align-items:center;font-size:11px;color:var(--ink-3)}
+.searchbox .kbd b{background:var(--surface-3);border:1px solid var(--line-2);border-radius:5px;padding:2px 6px;font-weight:600}
+.filters{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
+.chip{
+  height:28px;padding:0 11px;border-radius:8px;background:var(--surface-2);border:1px solid var(--line);
+  font-size:11.5px;font-weight:600;color:var(--ink-2);display:inline-flex;align-items:center;gap:6px;
+}
+.chip:hover{border-color:var(--line-2);color:var(--ink)}
+.chip.on{background:var(--strong-bg);border-color:var(--strong-bg);color:var(--strong-fg)}
+.chip .cnt{opacity:.55;font-size:10.5px}
+
+/* ---------- LISTA DE RESULTADOS ---------- */
+.reslist{display:flex;flex-direction:column}
+.res{
+  display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:13px;align-items:center;
+  padding:9px 10px;border-radius:11px;border:1px solid transparent;transition:background .12s,border-color .12s;
+}
+.res:hover{background:var(--surface);border-color:var(--line)}
+.res + .res{margin-top:2px}
+.thumb{
+  width:52px;height:38px;border-radius:8px;display:grid;place-items:center;color:#fff;
+  font-size:12px;font-weight:800;letter-spacing:-.02em;position:relative;overflow:hidden;flex:0 0 auto;
+}
+.thumb.sq{width:40px;height:40px;font-size:11px}
+.thumb::after{content:"";position:absolute;inset:0;background:linear-gradient(160deg,rgba(255,255,255,.22),transparent 55%)}
+.res-main{min-width:0}
+.res-title{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.res-meta{font-size:11.5px;color:var(--ink-3);margin-top:2px;display:flex;align-items:center;gap:7px}
+.res-meta .sep{width:3px;height:3px;border-radius:50%;background:var(--line-2)}
+.res-acts{display:flex;gap:6px;opacity:0;transition:opacity .13s}
+.res:hover .res-acts,.res:focus-within .res-acts{opacity:1}
+.tag{
+  font-size:9.5px;font-weight:800;letter-spacing:.05em;padding:2px 6px;border-radius:5px;
+  background:var(--surface-3);color:var(--ink-2);border:1px solid var(--line);
+}
+.tag.KARAOKE{background:var(--brand-soft);color:var(--brand-ink);border-color:#f7c9e2}
+.tag.CDG{background:var(--cyan-soft);color:#07708a;border-color:#c7e9f2}
+.tag.VIDEO{background:#eceafd;color:#5b45c9;border-color:#d8d3f8}
+.tag.CORO{background:var(--ok-soft);color:#0d7a3d;border-color:#bfe6cd}
+.tag.EN.VIVO,.tag.VIVO{background:var(--warn-soft);color:#8a6100;border-color:#f0dfb4}
+.empty{padding:44px 20px;text-align:center;color:var(--ink-3)}
+.empty b{display:block;color:var(--ink-2);font-size:13.5px;margin-bottom:4px}
+
+/* ---------- PREVIEW PRIVADO ---------- */
+.previewcol{
+  background:var(--surface);border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0;overflow:auto;
+}
+.pv-head{
+  padding:13px 16px;border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,#f0fbfe,#fff);
+}
+.pv-tagline{display:flex;align-items:center;gap:8px}
+.pv-tagline b{font-size:13px;font-weight:700;letter-spacing:-.01em}
+.eye{width:24px;height:24px;border-radius:7px;background:var(--cyan);display:grid;place-items:center;color:#fff}
+.eye svg{width:14px;height:14px}
+.pv-note{font-size:11.5px;color:var(--cyan);font-weight:600;margin-top:3px;padding-left:32px}
+.pv-stage{
+  margin:14px 16px 0;aspect-ratio:16/9;border-radius:12px;background:#0d1016;position:relative;overflow:hidden;
+  border:1px solid #1c212c;display:grid;place-items:center;
+}
+.pv-stage .pv-idle{color:#5a6272;font-size:12px;text-align:center;padding:0 20px}
+.pv-live-tag{
+  position:absolute;top:9px;left:9px;z-index:3;display:flex;align-items:center;gap:6px;
+  background:rgba(10,155,189,.92);color:#fff;font-size:10px;font-weight:800;letter-spacing:.05em;
+  padding:4px 8px;border-radius:6px;
+}
+.pv-live-tag .b{width:6px;height:6px;border-radius:50%;background:#fff}
+.stage-art{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:18px}
+.stage-art .sa-artist{font-size:12px;letter-spacing:.14em;font-weight:700;color:rgba(255,255,255,.62)}
+.stage-art .sa-title{font-size:21px;font-weight:800;color:#fff;letter-spacing:-.02em;margin-top:6px;line-height:1.2}
+.stage-art .sa-lyric{margin-top:14px;font-size:15px;font-weight:700;color:#fff;text-shadow:0 2px 12px rgba(0,0,0,.6)}
+.stage-art .sa-lyric i{font-style:normal;color:#ff56ae}
+.stage-scan{position:absolute;inset:0;background:radial-gradient(120% 80% at 50% 0%,rgba(229,0,126,.28),transparent 62%),linear-gradient(180deg,#151a24,#0b0e14)}
+.pv-info{padding:12px 16px 0}
+.pv-track{font-size:14.5px;font-weight:700;letter-spacing:-.01em}
+.pv-artist{font-size:12.5px;color:var(--ink-2);margin-top:1px}
+.specs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.spec{background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:7px 10px}
+.spec dt{font-size:10px;color:var(--ink-3);font-weight:600;letter-spacing:.03em}
+.spec dd{margin:2px 0 0;font-size:12.5px;font-weight:600}
+.transport{display:flex;align-items:center;gap:8px;margin-top:13px}
+.tp-btn{width:32px;height:32px;border-radius:9px;border:1px solid var(--line-2);background:var(--surface);display:grid;place-items:center;color:var(--ink-2)}
+.tp-btn:hover{background:var(--surface-2);color:var(--ink)}
+.tp-btn svg{width:15px;height:15px}
+.tp-btn.play{width:38px;height:38px;background:var(--cyan);border-color:var(--cyan);color:#fff}
+.tp-btn.play:hover{background:#0cb0d6}
+.tp-btn.play svg{width:17px;height:17px}
+.seek{flex:1;display:flex;align-items:center;gap:9px}
+.bar{flex:1;height:5px;border-radius:4px;background:var(--surface-3);position:relative;cursor:pointer}
+.bar .fill{position:absolute;inset:0 auto 0 0;border-radius:4px;background:var(--cyan);width:0%}
+.bar .knob{position:absolute;top:50%;width:11px;height:11px;border-radius:50%;background:#fff;border:2px solid var(--cyan);transform:translate(-50%,-50%);left:0}
+.bar.brand .fill{background:var(--brand)}
+.bar.brand .knob{border-color:var(--brand)}
+.time{font-size:11.5px;color:var(--ink-3);font-weight:600;min-width:38px;text-align:right}
+.pv-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:14px 16px 18px}
+.pv-actions .btn{height:36px}
+.pv-actions .wide{grid-column:1 / -1}
+.vol{display:flex;align-items:center;gap:7px;width:104px}
+.vol input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:5px;border-radius:4px;background:var(--surface-3)}
+.vol input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid var(--ink-2);cursor:pointer}
+.vol input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid var(--ink-2);cursor:pointer}
+
+/* ---------- COLA ---------- */
+.queuecol{background:var(--surface);border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+.q-head{padding:13px 15px 11px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:9px}
+.q-head b{font-size:13.5px;font-weight:700;letter-spacing:-.01em}
+.q-count{font-size:11px;font-weight:700;color:var(--ink-2);background:var(--surface-3);border-radius:6px;padding:2px 7px}
+.q-head .grow{flex:1}
+.now{
+  margin:12px 12px 0;border-radius:13px;background:linear-gradient(180deg,#fff5fa,#fff);
+  border:1px solid #f7cde3;padding:12px;position:relative;overflow:hidden;
+}
+.now::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--brand)}
+.now-label{display:flex;align-items:center;gap:7px;font-size:10px;font-weight:800;letter-spacing:.08em;color:var(--brand-ink)}
+.eq{display:flex;align-items:flex-end;gap:2px;height:11px}
+.eq i{width:2.5px;background:var(--brand);border-radius:2px;animation:eq .9s infinite ease-in-out;height:40%}
+.eq i:nth-child(2){animation-delay:.15s;height:80%}
+.eq i:nth-child(3){animation-delay:.3s;height:55%}
+.eq i:nth-child(4){animation-delay:.45s;height:95%}
+@keyframes eq{50%{height:22%}}
+.paused .eq i{animation-play-state:paused}
+.now-row{display:flex;gap:11px;align-items:center;margin-top:9px}
+.now-title{font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.now-meta{font-size:11.5px;color:var(--ink-2);margin-top:2px;display:flex;gap:6px;align-items:center}
+.now-bar{margin-top:10px}
+.q-scroll{flex:1;overflow:auto;padding:10px 12px 14px}
+.q-sub{
+  font-size:10px;font-weight:800;letter-spacing:.08em;color:var(--ink-3);
+  padding:12px 3px 7px;display:flex;align-items:center;gap:8px;
+}
+.q-sub::after{content:"";flex:1;height:1px;background:var(--line)}
+.qi{
+  display:grid;grid-template-columns:20px 34px minmax(0,1fr) auto;gap:9px;align-items:center;
+  padding:8px;border-radius:10px;border:1px solid transparent;background:var(--surface);
+  transition:background .12s,border-color .12s,box-shadow .12s;
+}
+.qi + .qi{margin-top:3px}
+.qi:hover{background:var(--surface-2);border-color:var(--line)}
+.qi.next{border-color:#cfe9f1;background:linear-gradient(180deg,#f4fcfe,#fff)}
+.qi.drag{opacity:.4}
+.qi.over{box-shadow:0 -2px 0 var(--brand) inset,0 0 0 1px var(--brand)}
+.qi-idx{font-size:11px;font-weight:700;color:var(--ink-3);text-align:center;cursor:grab}
+.qi-idx:active{cursor:grabbing}
+.qi-title{font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qi-meta{font-size:11px;color:var(--ink-3);margin-top:1px;display:flex;gap:6px;align-items:center;white-space:nowrap;overflow:hidden}
+.qi-acts{display:flex;gap:2px;opacity:0;transition:opacity .12s}
+.qi:hover .qi-acts,.qi:focus-within .qi-acts{opacity:1}
+.mini{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;color:var(--ink-3)}
+.mini:hover{background:var(--surface-3);color:var(--ink)}
+.mini svg{width:13px;height:13px}
+.mini.del:hover{background:var(--err-soft);color:var(--err)}
+.q-foot{padding:11px 12px;border-top:1px solid var(--line);display:flex;gap:8px;background:var(--surface-2)}
+.q-foot .btn{flex:1}
+.src{font-size:10.5px;font-weight:700;color:var(--ink-3)}
+
+/* ---------- PLAYER INFERIOR ---------- */
+.playerbar{
+  flex:0 0 68px;height:68px;background:var(--surface);border-top:1px solid var(--line);
+  display:grid;grid-template-columns:minmax(220px,1fr) minmax(320px,2fr) minmax(220px,1fr);
+  align-items:center;gap:18px;padding:0 16px;
+}
+.pb-left{display:flex;align-items:center;gap:11px;min-width:0}
+.pb-title{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pb-artist{font-size:11.5px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pb-center{display:flex;flex-direction:column;align-items:center;gap:5px}
+.pb-controls{display:flex;align-items:center;gap:10px}
+.pb-right{display:flex;align-items:center;justify-content:flex-end;gap:10px}
+.state-pill{
+  display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:7px;
+  font-size:10.5px;font-weight:800;letter-spacing:.05em;background:var(--surface-3);color:var(--ink-2);
+}
+.state-pill.tv{background:var(--brand-soft);color:var(--brand-ink)}
+.state-pill.pv{background:var(--cyan-soft);color:#07708a}
+.state-pill.pause{background:var(--warn-soft);color:#8a6100}
+
+/* ---------- BLOQUES GENERALES ---------- */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--sh-1)}
+.panel + .panel{margin-top:14px}
+.panel-head{padding:13px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+.panel-head b{font-size:13.5px;font-weight:700;letter-spacing:-.01em}
+.panel-head .grow{flex:1}
+.panel-body{padding:16px}
+.hint{font-size:11.5px;color:var(--ink-3)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.row{display:flex;align-items:center;gap:10px}
+.row + .row{margin-top:10px}
+.row .grow{flex:1}
+label.f{display:block;font-size:11.5px;font-weight:600;color:var(--ink-2);margin-bottom:5px}
+input.f,select.f{
+  width:100%;height:36px;padding:0 11px;border-radius:9px;border:1px solid var(--line-2);
+  background:var(--surface-2);font-size:13px;
+}
+input.f:focus,select.f:focus{outline:none;border-color:var(--cyan);background:#fff;box-shadow:0 0 0 3px rgba(10,155,189,.12)}
+.path{font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;font-size:12px}
+
+/* switch */
+.sw{width:40px;height:23px;border-radius:20px;background:var(--line-2);position:relative;transition:background .16s;flex:0 0 auto}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:17px;height:17px;border-radius:50%;background:#fff;box-shadow:var(--sh-1);transition:transform .16s}
+.sw.on{background:var(--ok)}
+.sw.on::after{transform:translateX(17px)}
+.sw.brand.on{background:var(--brand)}
+
+/* radios de calidad */
+.qopt{
+  display:grid;grid-template-columns:20px 1fr;gap:11px;padding:12px;border-radius:11px;
+  border:1px solid var(--line);background:var(--surface-2);text-align:left;width:100%;
+}
+.qopt + .qopt{margin-top:8px}
+.qopt:hover{border-color:var(--line-2)}
+.qopt.on{border-color:var(--cyan);background:var(--cyan-soft)}
+.dot-r{width:16px;height:16px;border-radius:50%;border:2px solid var(--line-2);margin-top:2px;position:relative}
+.qopt.on .dot-r{border-color:var(--cyan)}
+.qopt.on .dot-r::after{content:"";position:absolute;inset:2.5px;border-radius:50%;background:var(--cyan)}
+.qopt b{font-size:13px;font-weight:700}
+.qopt small{display:block;color:var(--ink-2);font-size:11.5px;margin-top:2px}
+
+/* ---------- PEDIDOS QR (DJ) ---------- */
+.req{
+  display:grid;grid-template-columns:46px minmax(0,1fr) auto;gap:13px;align-items:center;
+  padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);
+}
+.req + .req{margin-top:8px}
+.req.fresh{border-color:#f7cde3;background:linear-gradient(180deg,#fff6fa,#fff);animation:pop .32s ease}
+@keyframes pop{from{transform:translateY(-6px);opacity:0}}
+.table-mark{
+  width:46px;height:46px;border-radius:12px;background:var(--strong-bg);color:var(--strong-fg);
+  display:grid;place-items:center;line-height:1;text-align:center;
+}
+.table-mark small{display:block;font-size:8.5px;letter-spacing:.08em;opacity:.6}
+.table-mark b{font-size:16px;font-weight:800}
+.req-song{font-size:13.5px;font-weight:600}
+.req-meta{font-size:11.5px;color:var(--ink-3);margin-top:2px}
+.req-acts{display:flex;gap:6px}
+
+/* ---------- LOGS ---------- */
+.logbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.logs{
+  margin-top:12px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface);
+}
+.logrow{
+  display:grid;grid-template-columns:64px 58px 88px minmax(0,1fr);gap:12px;align-items:baseline;
+  padding:8px 13px;border-bottom:1px solid var(--surface-3);font-size:12.5px;
+}
+.logrow:last-child{border-bottom:0}
+.logrow:hover{background:var(--surface-2)}
+.logrow .t{font-size:11.5px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.lv{font-size:10px;font-weight:800;letter-spacing:.05em;padding:2px 6px;border-radius:5px;text-align:center}
+.lv.INFO{background:var(--surface-3);color:var(--ink-2)}
+.lv.WARN{background:var(--warn-soft);color:#8a6100}
+.lv.ERROR{background:var(--err-soft);color:var(--err)}
+.cat{font-size:10.5px;font-weight:700;color:var(--cyan);letter-spacing:.03em}
+.logmsg{color:var(--ink);min-width:0}
+
+/* ---------- OVERLAYS ---------- */
+.ov-preview{
+  aspect-ratio:16/9;border-radius:12px;background:#0d1016;position:relative;overflow:hidden;border:1px solid #1c212c;
+}
+.ov-layer{position:absolute;inset:0;pointer-events:none}
+.ov-card{
+  position:absolute;left:50%;transform:translateX(-50%);bottom:9%;
+  background:rgba(255,255,255,.96);border-radius:12px;padding:11px 18px;box-shadow:0 10px 34px rgba(0,0,0,.45);
+  font-size:15px;font-weight:700;color:#14161b;white-space:nowrap;
+  animation:ovin .32s cubic-bezier(.2,.9,.3,1.2);
+}
+@keyframes ovin{from{transform:translate(-50%,14px);opacity:0}}
+.ov-card.top{bottom:auto;top:8%}
+.ov-logo{position:absolute;top:16px;right:18px;display:flex;align-items:center;gap:8px;color:#fff;font-weight:800;font-size:14px;opacity:.92}
+.ov-qr{position:absolute;right:18px;bottom:16px;background:#fff;border-radius:10px;padding:9px;text-align:center;width:104px}
+.ov-qr .qrimg{width:86px;height:86px;background-image:conic-gradient(#000 25%,#fff 0 50%,#000 0 75%,#fff 0);background-size:9px 9px;border-radius:4px}
+.ov-qr small{display:block;font-size:9px;font-weight:700;margin-top:5px;color:#14161b}
+.ov-banner{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(90deg,#e5007e,#ff3fa8);color:#fff;padding:9px 18px;font-weight:700;font-size:13.5px}
+.ov-list{display:flex;flex-direction:column;gap:7px}
+.ov-item{display:grid;grid-template-columns:34px 1fr auto;gap:11px;align-items:center;padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2)}
+.ov-item.on{border-color:#f7cde3;background:var(--brand-soft)}
+.ov-ic{width:34px;height:34px;border-radius:9px;background:var(--surface);border:1px solid var(--line);display:grid;place-items:center;font-size:15px}
+.ov-item b{font-size:12.5px;font-weight:700;display:block}
+.ov-item small{font-size:11px;color:var(--ink-3)}
+.seg{display:inline-flex;background:var(--surface-3);border-radius:8px;padding:3px;gap:2px}
+.seg button{padding:4px 10px;border-radius:6px;font-size:11.5px;font-weight:600;color:var(--ink-2)}
+.seg button.on{background:#fff;color:var(--ink);box-shadow:var(--sh-1)}
+
+/* ---------- MODAL / DRAWER ---------- */
+.scrim{position:fixed;inset:0;background:rgba(16,18,24,.42);backdrop-filter:blur(2px);z-index:60;display:none}
+.scrim.on{display:block}
+.modal{
+  position:fixed;z-index:61;left:50%;top:50%;transform:translate(-50%,-50%) scale(.97);
+  width:min(430px,92vw);background:var(--surface);border-radius:18px;box-shadow:var(--sh-3);
+  display:none;overflow:hidden;opacity:0;transition:opacity .15s,transform .15s;
+}
+.modal.on{display:block;opacity:1;transform:translate(-50%,-50%) scale(1)}
+.modal-head{padding:17px 20px 13px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:11px}
+.modal-head b{font-size:15px;font-weight:700}
+.modal-body{padding:20px}
+.modal-foot{padding:13px 20px;border-top:1px solid var(--line);display:flex;gap:9px;justify-content:flex-end;background:var(--surface-2)}
+.drawer{
+  position:fixed;z-index:61;top:0;right:0;bottom:0;width:min(468px,96vw);background:var(--bg);
+  box-shadow:var(--sh-3);display:none;flex-direction:column;transform:translateX(14px);opacity:0;transition:.18s;
+}
+.drawer.on{display:flex;transform:none;opacity:1}
+.drawer-head{padding:16px 20px;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:11px}
+.drawer-body{flex:1;overflow:auto;padding:16px 20px 30px}
+.set-group{background:var(--surface);border:1px solid var(--line);border-radius:13px;overflow:hidden}
+.set-group + .set-group{margin-top:12px}
+.set-title{padding:11px 15px;font-size:11px;font-weight:800;letter-spacing:.07em;color:var(--ink-3);background:var(--surface-2);border-bottom:1px solid var(--line)}
+.set-row{padding:12px 15px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--surface-3)}
+.set-row:last-child{border-bottom:0}
+.set-row .grow{flex:1;min-width:0}
+.set-row b{font-size:12.5px;font-weight:600;display:block}
+.set-row small{font-size:11px;color:var(--ink-3)}
+.code-box{display:flex;gap:9px;justify-content:center;margin:6px 0 4px}
+.code-box span{
+  width:54px;height:66px;border-radius:13px;background:var(--surface-2);border:1.5px solid var(--line-2);
+  display:grid;place-items:center;font-size:30px;font-weight:800;letter-spacing:-.02em;color:var(--brand);
+}
+
+/* ---------- TOASTS ---------- */
+#toasts{position:fixed;z-index:80;right:18px;bottom:88px;display:flex;flex-direction:column;gap:9px;align-items:flex-end}
+.toast{
+  display:flex;align-items:center;gap:10px;background:var(--toast-bg);color:var(--toast-fg);padding:10px 15px;border-radius:11px;
+  font-size:12.5px;font-weight:600;box-shadow:var(--sh-3);animation:tin .22s ease;max-width:340px;
+}
+@keyframes tin{from{transform:translateY(10px);opacity:0}}
+.toast.out{animation:tout .2s forwards}
+@keyframes tout{to{transform:translateY(6px);opacity:0}}
+.toast .tk{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;background:var(--ok);flex:0 0 auto}
+.toast.warn .tk{background:var(--warn)}
+.toast.err .tk{background:var(--err)}
+.toast.info .tk{background:var(--cyan)}
+.toast svg{width:11px;height:11px}
+
+/* ---------- DEMO HUD ---------- */
+#demohud{
+  position:fixed;z-index:75;left:50%;transform:translateX(-50%);bottom:88px;display:none;
+  background:var(--toast-bg);color:var(--toast-fg);border-radius:13px;padding:12px 15px;box-shadow:var(--sh-3);
+  width:min(520px,92vw);
+}
+#demohud.on{display:block}
+.dh-top{display:flex;align-items:center;gap:10px;font-size:11px;font-weight:800;letter-spacing:.06em;color:#ff8fcb}
+.dh-top .grow{flex:1}
+.dh-step{font-size:13.5px;font-weight:600;margin-top:6px}
+.dh-bar{height:3px;border-radius:3px;background:#2a2f3b;margin-top:11px;overflow:hidden}
+.dh-bar i{display:block;height:100%;background:var(--brand);width:0;transition:width .3s}
+
+/* ================= TV PLAYER ================= */
+#view-tv{background:#05070b}
+.tvwrap{flex:1;display:flex;flex-direction:column;min-height:0}
+.tvbar{
+  height:44px;flex:0 0 44px;display:flex;align-items:center;gap:12px;padding:0 16px;
+  background:#0b0e14;border-bottom:1px solid #171c26;color:#9aa3b4;font-size:12px;
+}
+.tvbar b{color:#fff;font-weight:700;letter-spacing:.02em}
+.tvbar .grow{flex:1}
+.tv-stage-outer{flex:1;display:grid;place-items:center;padding:20px;min-height:0}
+.tv-stage{
+  width:min(100%,calc((100vh - 160px) * 16/9));aspect-ratio:16/9;background:#000;border-radius:14px;
+  position:relative;overflow:hidden;box-shadow:0 30px 90px rgba(0,0,0,.65);border:1px solid #1a2029;
+}
+.tv-idle{position:absolute;inset:0;display:grid;place-items:center;text-align:center;background:radial-gradient(80% 60% at 50% 40%,#1a1020,#07090d)}
+.tv-logo{display:flex;align-items:center;justify-content:center;gap:12px;font-size:30px;font-weight:800;color:#fff;letter-spacing:-.02em}
+.tv-logo span{color:var(--brand)}
+.tv-idle p{color:#7b8497;font-size:14px;margin-top:12px}
+.tv-lyrics{position:absolute;left:0;right:0;bottom:16%;text-align:center;padding:0 6%}
+.tv-lyrics .l1{font-size:clamp(18px,3.4vw,38px);font-weight:800;color:#fff;text-shadow:0 3px 18px rgba(0,0,0,.75);letter-spacing:-.01em}
+.tv-lyrics .l1 i{font-style:normal;color:#ff56ae}
+.tv-lyrics .l2{font-size:clamp(13px,2.2vw,24px);font-weight:700;color:rgba(255,255,255,.5);margin-top:10px}
+.tv-top{position:absolute;top:0;left:0;right:0;padding:20px 24px;display:flex;align-items:flex-start;gap:14px}
+.tv-track{color:#fff}
+.tv-track .a{font-size:clamp(10px,1.3vw,13px);letter-spacing:.14em;font-weight:700;color:rgba(255,255,255,.55)}
+.tv-track .t{font-size:clamp(15px,2.2vw,26px);font-weight:800;letter-spacing:-.02em;margin-top:3px}
+.tv-prog{position:absolute;left:0;right:0;bottom:0;height:4px;background:rgba(255,255,255,.12)}
+.tv-prog i{display:block;height:100%;background:linear-gradient(90deg,#e5007e,#ff56ae);width:0}
+.tv-next{
+  position:absolute;left:24px;bottom:26px;display:flex;align-items:center;gap:9px;
+  background:rgba(8,10,14,.62);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(6px);
+  color:#fff;padding:7px 12px;border-radius:10px;font-size:13px;font-weight:600;
+}
+.tv-next small{color:rgba(255,255,255,.55);font-size:10px;font-weight:800;letter-spacing:.08em;display:block}
+
+/* ================= QR CLIENTE ================= */
+#view-qr{background:#e9eaee;align-items:center;justify-content:center}
+.phonewrap{flex:1;display:grid;place-items:center;min-height:0;padding:16px;width:100%}
+.phone{
+  width:392px;max-width:100%;height:min(792px,calc(100vh - 90px));background:var(--surface);
+  border-radius:34px;box-shadow:0 30px 80px rgba(20,22,27,.28);overflow:hidden;display:flex;flex-direction:column;
+  border:1px solid #d8dbe2;
+}
+.ph-top{
+  background:linear-gradient(160deg,#ff3fa8,#e5007e 70%);color:#fff;padding:22px 20px 18px;
+}
+.ph-brand{display:flex;align-items:center;gap:9px;font-size:16px;font-weight:800;letter-spacing:-.01em}
+.ph-table{
+  margin-top:14px;display:inline-flex;align-items:center;gap:9px;background:rgba(255,255,255,.18);
+  border:1px solid rgba(255,255,255,.28);border-radius:11px;padding:8px 13px;font-weight:700;font-size:13.5px;
+}
+.ph-hint{font-size:12px;color:rgba(255,255,255,.82);margin-top:12px}
+.ph-search{padding:14px 16px 10px;border-bottom:1px solid var(--line)}
+.ph-search input{
+  width:100%;height:46px;border-radius:12px;border:1.5px solid var(--line-2);background:var(--surface-2);
+  padding:0 15px;font-size:15px;
+}
+.ph-search input:focus{outline:none;border-color:var(--brand);background:#fff;box-shadow:0 0 0 4px rgba(229,0,126,.1)}
+.ph-list{flex:1;overflow:auto;padding:8px 12px 16px}
+.ph-song{display:grid;grid-template-columns:44px 1fr auto;gap:11px;align-items:center;padding:10px;border-radius:12px}
+.ph-song:active{background:var(--surface-3)}
+.ph-song + .ph-song{border-top:1px solid var(--surface-3)}
+.ph-song b{font-size:13.5px;font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ph-song small{font-size:11.5px;color:var(--ink-3)}
+.ph-foot{padding:12px 16px 18px;border-top:1px solid var(--line);background:var(--surface-2)}
+.ph-sheet{
+  position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:20px 20px 0 0;padding:20px;
+  box-shadow:0 -14px 44px rgba(0,0,0,.18);transform:translateY(101%);transition:transform .24s cubic-bezier(.2,.9,.3,1);
+}
+.ph-sheet.on{transform:none}
+.ph-inner{position:relative;flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.ph-ok{position:absolute;inset:0;background:#fff;display:none;place-items:center;text-align:center;padding:30px;z-index:5}
+.ph-ok.on{display:grid}
+.ph-ok .tick{width:64px;height:64px;border-radius:50%;background:var(--ok-soft);color:var(--ok);display:grid;place-items:center;margin:0 auto 16px}
+.ph-ok .tick svg{width:30px;height:30px}
+.ph-ok b{font-size:18px;font-weight:800;display:block}
+.ph-ok p{color:var(--ink-2);font-size:13.5px;margin:8px 0 0}
+
+/* ---------- RESPONSIVE ---------- */
+@media (max-width:1500px){
+  :root{--preview:342px;--queue:314px}
+}
+@media (max-width:1280px){
+  :root{--preview:318px;--queue:296px;--rail:66px}
+  .searchbox input{height:46px;font-size:14.5px}
+}
+@media (max-width:1080px){
+  .shell,.shell.with-preview{grid-template-columns:var(--rail) minmax(0,1fr)}
+  .previewcol{display:none}
+  .queuecol{display:none}
+  .shell.mobile-queue .queuecol{display:flex;position:fixed;right:0;top:96px;bottom:68px;width:320px;z-index:40;box-shadow:var(--sh-3)}
+}
+@media (max-width:720px){
+  .topbar{gap:9px;padding:0 10px}
+  .brand-sub,.ver-chip,.topbar-actions .hide-sm{display:none}
+  .playerbar{grid-template-columns:1fr auto;gap:10px}
+  .pb-right{display:none}
+}
+/* ================= FASE 2 · HOME vs BAR PRO ================= */
+.demo-wrap{position:relative}
+.demo-menu{position:absolute;top:30px;right:0;background:#1b1f28;border:1px solid #2a2f3b;border-radius:10px;padding:5px;display:none;z-index:90;min-width:200px;box-shadow:0 16px 40px rgba(0,0,0,.5)}
+.demo-menu.on{display:block}
+.demo-menu button{display:block;width:100%;text-align:left;padding:7px 10px;border-radius:7px;color:#d6dbe6;font-size:12px;font-weight:600}
+.demo-menu button:hover{background:#252b36;color:#fff}
+.toast .tact{margin-left:4px;background:rgba(255,255,255,.16);border-radius:7px;padding:5px 9px;font-size:11.5px;font-weight:700;color:#fff}
+.toast .tact:hover{background:rgba(255,255,255,.28)}
+.toast.lock .tk{background:var(--ink-2)}
+
+/* candados y etiquetas de producto */
+.pro-tag{font-size:9.5px;font-weight:800;letter-spacing:.05em;background:var(--brand-soft);color:var(--brand-ink);border:1px solid #f7c9e2;padding:2px 6px;border-radius:5px;white-space:nowrap}
+.chip.locked,.qopt.locked{color:var(--ink-3);background:var(--surface-3);border-style:dashed}
+.set-row.locked b{color:var(--ink-3)}
+.set-row.locked{background:var(--surface-2)}
+.lock-note{padding:11px 15px;font-size:11.5px;color:var(--ink-3);background:var(--surface-2);border-top:1px solid var(--surface-3)}
+
+/* barra de modo noche */
+.night-strip{display:none;align-items:center;gap:20px;padding:9px 16px;background:#141824;border-bottom:1px solid #232a3a;color:#cfd6e4;flex:0 0 auto}
+.night-strip.on{display:flex}
+.ns-title{display:flex;align-items:center;gap:9px;font-size:12px;font-weight:800;letter-spacing:.05em;color:#ffcf70}
+.ns-dot{width:8px;height:8px;border-radius:50%;background:#ffb020;box-shadow:0 0 0 3px rgba(255,176,32,.18)}
+.ns-stat b{display:block;font-size:15px;font-weight:700;color:#fff;line-height:1.1}
+.ns-stat small{font-size:9.5px;letter-spacing:.06em;color:#8b93a7;font-weight:700}
+.night-strip .grow{flex:1}
+.ns-next{font-size:12px;color:#aeb6c6}
+.ns-next b{color:#fff}
+
+/* composición de capas (preview y TV) */
+.comp{position:absolute;inset:0;overflow:hidden}
+.bg-sim{position:absolute;inset:0;background-size:220% 220%}
+.bg-move{animation:bgpan 14s linear infinite alternate}
+@keyframes bgpan{to{background-position:100% 60%}}
+.bg-dots{position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.5) 1px,transparent 1px);background-size:34px 34px;opacity:.22;animation:bgdrift 18s linear infinite}
+@keyframes bgdrift{to{background-position:120px 90px}}
+.bg-waves{position:absolute;inset:0;background:repeating-linear-gradient(115deg,rgba(255,255,255,.07) 0 12px,transparent 12px 36px);animation:bgdrift 9s linear infinite}
+.comp-label{position:absolute;left:10px;bottom:10px;z-index:4;display:flex;align-items:center;gap:6px;font-size:9.5px;font-weight:800;letter-spacing:.05em;color:#fff;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.16);padding:4px 8px;border-radius:7px}
+.cdg-box{position:absolute;left:0;right:0;bottom:14%;text-align:center;padding:0 8%;z-index:3}
+.cdg-line{font-weight:800;color:#fff;text-shadow:0 3px 16px rgba(0,0,0,.8);letter-spacing:-.01em}
+.cdg-line i{font-style:normal;color:#ff56ae}
+.cdg-line2{font-weight:700;color:rgba(255,255,255,.55);margin-top:8px}
+
+/* panel de capas del preview */
+.layers-box{display:none;padding:11px 16px 0}
+.layers-box.on{display:block}
+.layer-row{display:flex;align-items:center;gap:10px;padding:7px 10px;border:1px solid var(--line);border-radius:9px;background:var(--surface-2)}
+.layer-row + .layer-row{margin-top:5px}
+.layer-row b{font-size:12px;font-weight:600;flex:1}
+.layer-row small{font-size:10.5px;color:var(--ink-3)}
+.layer-arrow{text-align:center;font-size:11px;color:var(--ink-3);line-height:1.1;margin:2px 0}
+
+/* fondos CDG */
+.bgfile{display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:11px;align-items:center;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2)}
+.bgfile + .bgfile{margin-top:6px}
+.bgfile.on{border-color:var(--cyan);background:var(--cyan-soft)}
+.bgfile .film{width:38px;height:28px;border-radius:6px;display:grid;place-items:center;font-size:13px}
+.bgfile b{font-size:12.5px;font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bgfile small{font-size:11px;color:var(--ink-3)}
+.swatches{display:flex;gap:8px;flex-wrap:wrap}
+.swatch{width:62px;height:44px;border-radius:9px;border:2px solid var(--line-2);position:relative}
+.swatch.on{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(10,155,189,.15)}
+.swatch span{position:absolute;left:0;right:0;bottom:-17px;font-size:10px;font-weight:600;color:var(--ink-2);text-align:center}
+.genre-row{display:grid;grid-template-columns:96px 1fr auto;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--surface-3);font-size:12.5px}
+.genre-row:last-child{border-bottom:0}
+.genre-row b{font-size:11px;font-weight:800;letter-spacing:.05em;color:var(--ink-2)}
+.bgnow{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:600;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:4px 10px}
+.now-bg{display:none;gap:5px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);align-items:center}
+.now-bg.on{display:flex}
+.now-bg .btn{flex:1;padding:0 6px}
+
+/* tabla comparativa */
+.cmp-wrap{max-height:min(64vh,520px);overflow:auto;border:1px solid var(--line);border-radius:12px}
+table.cmp{width:100%;border-collapse:collapse;font-size:12.5px}
+table.cmp th{position:sticky;top:0;background:var(--surface-2);border-bottom:1px solid var(--line);padding:11px 14px;text-align:left;font-size:11px;letter-spacing:.05em;color:var(--ink-2)}
+table.cmp th.c,table.cmp td.c{text-align:center;width:118px}
+table.cmp td{padding:10px 14px;border-bottom:1px solid var(--surface-3);vertical-align:top}
+table.cmp tr:last-child td{border-bottom:0}
+table.cmp b{font-size:12.5px;font-weight:600;display:block}
+table.cmp small{color:var(--ink-3);font-size:11px}
+.yes{color:var(--ok);font-weight:800}
+.no{color:var(--ink-3)}
+.basic{color:var(--warn);font-weight:700;font-size:11px}
+.modal.wide{width:min(760px,94vw)}
+
+@media (hover:none){
+  .res-acts,.qi-acts{opacity:1}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.001ms !important;transition-duration:.001ms !important}
+}
+/* ================= FASE 2.1 · TEMAS LIGHT / NIGHT ================= */
+:root[data-theme="light"]{color-scheme:light}
+:root[data-theme="night"]{
+  color-scheme:dark;
+  --bg:#0d1016;--surface:#151922;--surface-2:#1c212c;--surface-3:#232936;
+  --line:#292f3a;--line-2:#394252;--ink:#e8eaf0;--ink-2:#b3bac8;--ink-3:#929bab;
+  --brand:#e5007e;--brand-ink:#ff8fcb;--brand-soft:#351326;
+  --cyan:#0aafd0;--cyan-soft:#102d36;--ok:#2cc56f;--ok-soft:#123322;
+  --warn:#f0b429;--warn-soft:#352a12;--err:#ff6258;--err-soft:#3a1719;
+  --strong-bg:#303746;--strong-fg:#f4f6fb;--toast-bg:#10141c;--toast-fg:#f4f6fb;
+  --sh-1:0 1px 2px rgba(0,0,0,.28);--sh-2:0 2px 8px rgba(0,0,0,.32),0 1px 2px rgba(0,0,0,.22);--sh-3:0 22px 58px rgba(0,0,0,.56);
+}
+html.theme-transition body,html.theme-transition .topbar,html.theme-transition .rail,
+html.theme-transition .work,html.theme-transition .previewcol,html.theme-transition .queuecol,
+html.theme-transition .playerbar,html.theme-transition .panel,html.theme-transition .modal,
+html.theme-transition .drawer,html.theme-transition .set-group,html.theme-transition .set-row,
+html.theme-transition .btn,html.theme-transition input,html.theme-transition select,
+html.theme-transition .chip,html.theme-transition .res,html.theme-transition .qi{
+  transition:background-color .2s ease,border-color .2s ease,color .2s ease,box-shadow .2s ease;
+}
+.theme-toggle{font-size:16px;line-height:1}.theme-toggle span{display:block;transform:translateY(-1px)}
+.theme-options{display:flex;gap:8px;flex-wrap:wrap}
+.theme-choice{flex:1;min-width:150px;text-align:left;border:1px solid var(--line);background:var(--surface-2);border-radius:11px;padding:10px 12px;color:var(--ink-2)}
+.theme-choice:hover{border-color:var(--line-2);background:var(--surface-3)}
+.theme-choice.on{border-color:var(--brand);box-shadow:0 0 0 3px rgba(229,0,126,.12);color:var(--ink);background:var(--brand-soft)}
+.theme-choice b{display:block;font-size:12.5px;color:inherit}.theme-choice small{display:block;font-size:10.8px;color:var(--ink-3);margin-top:2px;line-height:1.3}
+:root[data-theme="night"] .pv-head{background:linear-gradient(180deg,#102832,var(--surface))}
+:root[data-theme="night"] .now{background:linear-gradient(180deg,#2b1421,var(--surface));border-color:#5a2442}
+:root[data-theme="night"] .qi.next{background:linear-gradient(180deg,#132a31,var(--surface));border-color:#24505b}
+:root[data-theme="night"] .req.fresh{background:linear-gradient(180deg,#2b1421,var(--surface));border-color:#5a2442}
+:root[data-theme="night"] .seg button.on{background:#303746;color:var(--ink);box-shadow:var(--sh-1)}
+:root[data-theme="night"] .qopt.on{background:var(--cyan-soft);border-color:var(--cyan)}
+:root[data-theme="night"] .btn.primary{box-shadow:0 3px 12px rgba(229,0,126,.26)}
+:root[data-theme="night"] .searchbox input:focus,:root[data-theme="night"] input.f:focus,:root[data-theme="night"] select.f:focus{background:#171d27}
+:root[data-theme="night"] .tvpill.live{background:var(--ok-soft);border-color:#28583b;color:#70dfa0}
+:root[data-theme="night"] .mode-badge{border-color:#5b2442}:root[data-theme="night"] .mode-badge.casa{background:var(--cyan-soft);color:#7ddcf0;border-color:#24505b}
+:root[data-theme="night"] table.cmp th{background:#1b202b}:root[data-theme="night"] .modal-foot{background:#191e28}:root[data-theme="night"] .set-title{background:#1b202b}
+:root[data-theme="night"] .code-box span{background:#1c212c;border-color:#394252}:root[data-theme="night"] .swatch span{color:var(--ink-2)}
+:root[data-theme="night"] .chip.on{border-color:#465064;box-shadow:inset 0 0 0 1px rgba(255,255,255,.02)}
+:root[data-theme="night"] .toast,:root[data-theme="night"] #demohud{border:1px solid #303746}
+/* Pedidos QR cliente conserva su identidad clara y es independiente del tema del DJ. */
+:root[data-theme="night"] #view-qr{--bg:#f1f2f5;--surface:#fff;--surface-2:#f8f9fb;--surface-3:#eef0f4;--line:#e3e6ec;--line-2:#d3d8e0;--ink:#14161b;--ink-2:#5c6472;--ink-3:#8b93a2;color-scheme:light}
+
+</style>
+<script>
+/* FASE 2.1 · restaura el tema antes de pintar la interfaz. */
+(function(){var t="light";try{t=localStorage.getItem("kitkaraoke_theme")||"light"}catch(e){}document.documentElement.setAttribute("data-theme",t==="night"?"night":"light")})();
+</script>
+</head>
+<body>
+
+<!-- ================================================================
+     BLOQUE 2 / MARCADO
+     ================================================================ -->
+
+<!-- ---------- BARRA DE DESARROLLO (cambio de experiencia) ---------- -->
+<div id="devbar">
+  <div class="dev-tag"><i class="dev-dot"></i> PROTOTIPO V5.2</div>
+  <div class="dev-sep"></div>
+  <div class="devswitch" id="devswitch">
+    <button data-view="dj" class="on">Panel DJ</button>
+    <button data-view="tv">TV Player</button>
+    <button data-view="qr">Pedidos QR · cliente</button>
+  </div>
+  <div class="spacer"></div>
+  <button class="devbtn accent" id="btnDemoAuto">▶ Demo automática BAR PRO</button>
+  <div class="demo-wrap">
+    <button class="devbtn" id="btnDemos">Más demos ▾</button>
+    <div class="demo-menu" id="demoMenu">
+      <button id="btnDemoHome">Demo HOME · sencillo</button>
+      <button id="btnDemoBg">Demo fondos CDG PRO</button>
+      <button id="btnDemoPreview">Demo preview privado</button>
+      <button id="btnDemoYT">Demo YouTube</button>
+    </div>
+  </div>
+  <button class="devbtn" id="btnOpenTv">Abrir como TV</button>
+</div>
+
+<!-- ================================================================
+     VISTA 1 · PANEL DJ
+     ================================================================ -->
+<div class="view on" id="view-dj">
+
+  <!-- HEADER -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">🎤</div>
+      <div class="brand-text">
+        <div class="brand-name">KITKARAOKE <span>EVENT</span></div>
+        <div class="brand-sub">Control DJ · TV · QR · CDG</div>
+      </div>
+    </div>
+    <div class="ver-chip">V5.2 WEB</div>
+
+    <div class="grow"></div>
+
+    <div class="tvpill" id="tvPill"><i class="dot"></i><span id="tvPillText">TV sin conectar</span></div>
+
+    <div class="topbar-actions">
+      <button class="btn" id="btnLinkTv">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        Vincular TV
+      </button>
+      <button class="btn hide-sm" id="btnSecondScreen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="13" height="10" rx="2"/><path d="M8 21h11a2 2 0 0 0 2-2v-7"/></svg>
+        2ª pantalla
+      </button>
+      <button class="btn hide-sm" data-goto="qr">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v3M17 20h4"/></svg>
+        Pedidos QR
+      </button>
+      <button class="btn" id="btnNight">🌙 Iniciar noche</button>
+      <div class="mode-badge" id="modeBadge">🍸 BAR PRO</div>
+      <button class="btn icon ghost" data-goto="logs" title="Logs">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h10M4 18h13"/></svg>
+      </button>
+      <button class="btn icon ghost theme-toggle" id="btnTheme" title="Cambiar tema" aria-label="Cambiar tema"><span id="themeIcon">🌙</span></button>
+      <button class="btn icon ghost" id="btnSettings" title="Configuración">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 9 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- BARRA COMPACTA DE MODO NOCHE -->
+  <div class="night-strip" id="nightStrip">
+    <div class="ns-title"><i class="ns-dot"></i><span id="nsName">NOCHE ACTIVA</span></div>
+    <div class="ns-stat"><b id="nsSongs">0</b><small>CANCIONES</small></div>
+    <div class="ns-stat"><b id="nsReq">0</b><small>PEDIDOS</small></div>
+    <div class="ns-stat"><b id="nsTables">0</b><small>MESAS</small></div>
+    <div class="ns-stat"><b id="nsWait">0 min</b><small>ESPERA MEDIA</small></div>
+    <div class="ns-next">Próximo: <b id="nsNext">—</b></div>
+    <div class="grow"></div>
+    <button class="devbtn" id="btnNightEnd">Cerrar noche</button>
+  </div>
+
+  <!-- SHELL -->
+  <div class="shell with-preview" id="shell">
+
+    <!-- RAIL -->
+    <nav class="rail" id="rail">
+      <button class="rail-item on" data-sec="karaokes">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M6 11a6 6 0 0 0 12 0M12 18v3"/></svg>
+        KARAOKES
+      </button>
+      <button class="rail-item" data-sec="youtube">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="2" y="5" width="20" height="14" rx="4"/><path d="M10 9.5v5l4.5-2.5z" fill="currentColor" stroke="none"/></svg>
+        YOUTUBE
+      </button>
+      <button class="rail-item" data-sec="dj">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M5 4v6M5 14v6M12 4v10M12 18v2M19 4v3M19 11v9"/><circle cx="5" cy="12" r="2"/><circle cx="12" cy="16" r="2"/><circle cx="19" cy="9" r="2"/></svg>
+        MODO DJ
+      </button>
+      <button class="rail-item" data-sec="qr">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v3M17 20h4"/></svg>
+        PEDIDOS
+        <span class="rail-badge" id="railBadge">0</span>
+      </button>
+      <button class="rail-item" data-sec="overlays">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg>
+        OVERLAYS
+      </button>
+      <button class="rail-item" data-sec="logs">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9l2.5 2.5L7 14M12.5 14H17"/></svg>
+        LOGS
+      </button>
+      <div class="grow"></div>
+      <button class="rail-item" id="railSettings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>
+        AJUSTES
+      </button>
+    </nav>
+
+    <!-- ÁREA DE TRABAJO -->
+    <div class="work">
+
+      <!-- ========== KARAOKES ========== -->
+      <section class="sec on" data-sec="karaokes">
+        <div class="searchwrap">
+          <div class="searchbox">
+            <svg class="mag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+            <input id="kSearch" placeholder="Buscar artista o canción..." autocomplete="off">
+            <div class="kbd"><b>Ctrl</b><b>K</b></div>
+          </div>
+          <div class="filters" id="kFilters">
+            <button class="chip on" data-f="TODOS">Todos <span class="cnt" id="cTODOS"></span></button>
+            <button class="chip" data-f="KARAOKE">Karaoke <span class="cnt" id="cKARAOKE"></span></button>
+            <button class="chip" data-f="CDG">CDG <span class="cnt" id="cCDG"></span></button>
+            <button class="chip" data-f="VIDEO">Video <span class="cnt" id="cVIDEO"></span></button>
+            <button class="chip" data-f="CORO">Coro <span class="cnt" id="cCORO"></span></button>
+            <button class="chip" data-f="VIVO">En vivo <span class="cnt" id="cVIVO"></span></button>
+          </div>
+        </div>
+        <div class="sec-body">
+          <div class="reslist" id="kResults"></div>
+        </div>
+      </section>
+
+      <!-- ========== YOUTUBE ========== -->
+      <section class="sec" data-sec="youtube">
+        <div class="searchwrap">
+          <div class="searchbox">
+            <svg class="mag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+            <input id="ytSearch" placeholder="Buscar en YouTube..." autocomplete="off">
+          </div>
+          <div class="row" style="margin-top:10px">
+            <input class="f grow" id="ytUrl" placeholder="Pegar URL de YouTube (https://youtu.be/...)">
+            <button class="btn primary" id="ytAdd">Agregar</button>
+          </div>
+        </div>
+        <div class="sec-body">
+          <div class="panel" id="ytOpsPanel" style="display:none;margin-bottom:14px">
+            <div class="panel-head"><b>Resolver simulado</b><div class="grow"></div><span class="hint">Sin conexión real a YouTube</span></div>
+            <div class="panel-body" id="ytOps" style="padding:12px 16px"></div>
+          </div>
+          <div class="reslist" id="ytResults"></div>
+        </div>
+      </section>
+
+      <!-- ========== MODO DJ ========== -->
+      <section class="sec" data-sec="dj">
+        <div class="sec-head">
+          <div>
+            <div class="sec-title">Modo DJ</div>
+            <div class="sec-desc">Transiciones, micrófonos y automatismos de la sala</div>
+          </div>
+          <div class="grow"></div>
+          <button class="btn danger" id="djPanic">Silencio de emergencia</button>
+        </div>
+        <div class="sec-body">
+          <div class="grid2">
+            <div class="panel">
+              <div class="panel-head"><b>Transiciones</b></div>
+              <div class="panel-body">
+                <div class="row"><div class="grow"><b style="font-size:12.5px">Fundido automático entre temas</b><div class="hint">Aplica al pasar al siguiente elemento de la cola</div></div><div class="sw on brand" data-sw="autofade"></div></div>
+                <div class="row"><div class="grow"><label class="f">Duración del fundido</label><select class="f" id="djFade"><option>0.5 s</option><option selected>1.5 s</option><option>3 s</option><option>5 s</option></select></div></div>
+                <div class="row"><div class="grow"><b style="font-size:12.5px">Cuenta regresiva en TV</b><div class="hint">Muestra 3·2·1 antes de que arranque el karaoke</div></div><div class="sw on brand" data-sw="countdown"></div></div>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><b>Micrófonos</b></div>
+              <div class="panel-body">
+                <div class="row"><span class="src" style="width:74px">MIC 1</span><input type="range" class="grow" value="72" id="mic1"><span class="time num" id="mic1v">72</span></div>
+                <div class="row"><span class="src" style="width:74px">MIC 2</span><input type="range" class="grow" value="64" id="mic2"><span class="time num" id="mic2v">64</span></div>
+                <div class="row"><span class="src" style="width:74px">MÚSICA</span><input type="range" class="grow" value="85" id="mus"><span class="time num" id="musv">85</span></div>
+                <div class="row"><div class="grow"><b style="font-size:12.5px">Eco de voz</b><div class="hint">Reverb corto para karaoke</div></div><div class="sw on brand" data-sw="echo"></div></div>
+              </div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><b>Cortinas y efectos</b><div class="grow"></div><span class="hint">Se insertan al inicio de la cola</span></div>
+            <div class="panel-body">
+              <div class="grid3" id="djPads">
+                <button class="btn" data-pad="Aplausos">👏 Aplausos</button>
+                <button class="btn" data-pad="Tambora">🥁 Tambora</button>
+                <button class="btn" data-pad="Cumpleaños">🎂 Cumpleaños</button>
+                <button class="btn" data-pad="Sirena">🚨 Sirena</button>
+                <button class="btn" data-pad="Brindis">🥂 Brindis</button>
+                <button class="btn" data-pad="Intro sala">🎧 Intro sala</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== PEDIDOS QR (DJ) ========== -->
+      <section class="sec" data-sec="qr">
+        <div class="sec-head">
+          <div>
+            <div class="sec-title">Pedidos QR</div>
+            <div class="sec-desc" id="qrModeNote">Las mesas envían sus canciones desde el celular</div>
+          </div>
+          <div class="grow"></div>
+          <button class="btn" id="btnSimReq">Simular nuevo pedido</button>
+          <button class="btn" data-devview="qr">Ver pantalla del cliente</button>
+        </div>
+        <div class="sec-body">
+          <div id="qrDisabled" class="panel" style="display:none">
+            <div class="panel-body" style="text-align:center;padding:34px">
+              <b style="font-size:14px">🔒 Los pedidos de mesa son parte de BAR / KARAOKE PRO</b>
+              <div class="hint" style="margin-top:6px">Las mesas piden desde su celular, cada pedido llega con nombre y número de mesa.</div>
+              <div class="row" style="justify-content:center;margin-top:14px"><button class="btn" id="btnGoCompare">Ver diferencias</button><button class="btn primary" id="btnGoBar">Activar BAR PRO</button></div>
+            </div>
+          </div>
+          <div id="qrLive">
+            <div class="panel">
+              <div class="panel-head">
+                <b>Nuevos pedidos</b>
+                <span class="q-count" id="reqCount">0</span>
+                <div class="grow"></div>
+                <span class="hint">Aceptar envía la canción a la cola central</span>
+              </div>
+              <div class="panel-body" id="reqList"></div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><b>Historial de la noche</b><div class="grow"></div><span class="hint" id="histCount"></span></div>
+              <div class="panel-body" id="reqHist"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== OVERLAYS ========== -->
+      <section class="sec" data-sec="overlays">
+        <div class="sec-head">
+          <div>
+            <div class="sec-title">Overlays</div>
+            <div class="sec-desc">Capas que se dibujan encima de la TV del público</div>
+          </div>
+          <div class="grow"></div>
+          <button class="btn" id="ovHideAll">Ocultar todo</button>
+        </div>
+        <div class="sec-body">
+          <div class="grid2">
+            <div>
+              <div class="panel">
+                <div class="panel-head"><b>Capas</b><div class="grow"></div><span class="hint" id="ovState">Ninguna visible</span></div>
+                <div class="panel-body">
+                  <div class="ov-list" id="ovList"></div>
+                </div>
+              </div>
+              <div class="panel">
+                <div class="panel-head"><b>Mensaje en pantalla</b></div>
+                <div class="panel-body">
+                  <input class="f" id="ovText" value="🎤 Próximo cantante: Carlos · Mesa 4">
+                  <div class="row" style="margin-top:11px">
+                    <span class="src">DURACIÓN</span>
+                    <div class="seg" id="ovTimer">
+                      <button data-t="5">5 s</button>
+                      <button data-t="10" class="on">10 s</button>
+                      <button data-t="15">15 s</button>
+                      <button data-t="0">Permanente</button>
+                    </div>
+                  </div>
+                  <div class="row" style="margin-top:12px">
+                    <button class="btn primary grow" id="ovShow">Mostrar en TV</button>
+                    <button class="btn grow" id="ovHide">Ocultar</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="panel">
+                <div class="panel-head"><b>Vista previa de la capa</b><div class="grow"></div><span class="hint">Tal como se verá en la TV</span></div>
+                <div class="panel-body">
+                  <div class="ov-preview" id="ovPreview">
+                    <div class="stage-scan"></div>
+                    <div class="ov-layer" id="ovPreviewLayer"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- CALIDAD CDG -->
+              <div class="panel">
+                <div class="panel-head">
+                  <b>Calidad CDG</b><div class="grow"></div>
+                  <div class="row" style="gap:8px"><span class="hint">Modo avanzado</span><div class="sw" data-sw="cdgadv" id="swCdgAdv"></div></div>
+                </div>
+                <div class="panel-body">
+                  <div id="cdgSimple">
+                    <button class="qopt" data-cdg="rapida"><span class="dot-r"></span><span><b>Rápida</b><small>Menor consumo · equipos modestos</small></span></button>
+                    <button class="qopt on" data-cdg="alta"><span class="dot-r"></span><span><b>Alta calidad</b><small>Equilibrio recomendado</small></span></button>
+                    <button class="qopt" data-cdg="maxima"><span class="dot-r"></span><span><b>Máxima fidelidad</b><small>Máxima precisión gráfica</small></span></button>
+                  </div>
+                  <div id="cdgAdv" style="display:none">
+                    <div class="grid2">
+                      <div><label class="f">RAW frame mode</label><select class="f"><option>Auto</option><option>Forzado</option><option>Apagado</option></select></div>
+                      <div><label class="f">SDF</label><select class="f"><option>Activo</option><option>Desactivado</option></select></div>
+                      <div><label class="f">Anti-alias</label><select class="f"><option>2x</option><option selected>4x</option><option>8x</option></select></div>
+                      <div><label class="f">Scale</label><select class="f"><option>1.0</option><option selected>1.5</option><option>2.0</option><option>3.0</option></select></div>
+                      <div><label class="f">Render buffer</label><select class="f"><option>64 MB</option><option selected>128 MB</option><option>256 MB</option></select></div>
+                      <div><label class="f">FPS</label><select class="f"><option>30</option><option selected>60</option><option>120</option></select></div>
+                      <div><label class="f">Timing correction</label><input class="f num" value="+12 ms"></div>
+                      <div><label class="f">Sweep smoothing</label><input class="f num" value="0.35"></div>
+                    </div>
+                    <div class="hint" style="margin-top:12px">Los valores técnicos son simulados en esta maqueta: se guardan en la configuración pero no afectan al render.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== LOGS ========== -->
+      <section class="sec" data-sec="logs">
+        <div class="sec-head">
+          <div>
+            <div class="sec-title">Logs</div>
+            <div class="sec-desc">Registro técnico para soporte · sin datos sensibles</div>
+          </div>
+          <div class="grow"></div>
+          <button class="btn sm" id="logRefresh">Actualizar</button>
+          <button class="btn sm" id="logCopy">Copiar todo</button>
+          <button class="btn sm" id="logDl">Descargar .txt</button>
+          <button class="btn sm danger" id="logClear">Limpiar</button>
+        </div>
+        <div class="sec-body">
+          <div class="logbar">
+            <div class="seg" id="logLevels">
+              <button data-l="TODO" class="on">Todo</button>
+              <button data-l="INFO">Info</button>
+              <button data-l="WARN">Warn</button>
+              <button data-l="ERROR">Error</button>
+            </div>
+            <select class="f" id="logCat" style="width:180px">
+              <option value="TODAS">Todas las categorías</option>
+              <option>APP</option><option>ENGINE</option><option>SEARCH</option><option>RESOLVER</option>
+              <option>FFMPEG</option><option>VIDEO</option><option>TV</option><option>WS</option>
+              <option>WEBRTC</option><option>TURN</option><option>NETWORK</option><option>REQUESTS</option>
+              <option>OVERLAY</option><option>API</option><option>BROWSER</option>
+            </select>
+            <div class="grow"></div>
+            <span class="hint" id="logCount"></span>
+          </div>
+          <div class="logs" id="logList"></div>
+        </div>
+      </section>
+
+    </div><!-- /work -->
+
+    <!-- PREVIEW PRIVADO -->
+    <aside class="previewcol" id="previewCol">
+      <div class="pv-head">
+        <div class="pv-tagline">
+          <span class="eye"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="2.6"/></svg></span>
+          <b>Preview privado</b>
+        </div>
+        <div class="pv-note">Solo tú estás viendo esto · la TV no cambia</div>
+        <div class="row" style="margin-top:10px" id="pvLayersRow">
+          <button class="btn sm grow" id="pvLayersBtn">Ver capas</button>
+          <span class="pro-tag">BAR PRO</span>
+        </div>
+      </div>
+      <div class="layers-box" id="pvLayers"></div>
+
+      <div class="pv-stage" id="pvStage">
+        <div class="pv-idle" id="pvIdle">Elige <b>Preview</b> en cualquier resultado para revisarlo aquí sin tocar la TV.</div>
+      </div>
+
+      <div class="pv-info">
+        <div class="pv-track" id="pvTitle">Sin material en preview</div>
+        <div class="pv-artist" id="pvArtist">—</div>
+        <dl class="specs">
+          <div class="spec"><dt>Fuente</dt><dd id="pvSource">—</dd></div>
+          <div class="spec"><dt>Resolución</dt><dd id="pvRes">—</dd></div>
+          <div class="spec"><dt>Tipo</dt><dd id="pvType">—</dd></div>
+          <div class="spec"><dt>Duración</dt><dd id="pvDur" class="num">—</dd></div>
+        </dl>
+        <div class="transport">
+          <button class="tp-btn" id="pvPrev" title="Anterior"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 6h2v12H7zM19 6v12l-9-6z"/></svg></button>
+          <button class="tp-btn play" id="pvPlay" title="Reproducir"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
+          <button class="tp-btn" id="pvNext" title="Siguiente"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M15 6h2v12h-2zM5 6l9 6-9 6z"/></svg></button>
+          <div class="vol"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M5 9v6h4l5 4V5L9 9H5z"/><path d="M17 9.5a3.5 3.5 0 0 1 0 5"/></svg><input type="range" id="pvVol" value="80"></div>
+        </div>
+        <div class="transport" style="margin-top:9px">
+          <span class="time num" id="pvCur">0:00</span>
+          <div class="bar" id="pvBar"><i class="fill"></i><i class="knob"></i></div>
+          <span class="time num" id="pvTot">0:00</span>
+        </div>
+      </div>
+
+      <div class="pv-actions">
+        <button class="btn" id="pvQueue">+ Cola</button>
+        <button class="btn" id="pvPlayNow">Reproducir ahora</button>
+        <button class="btn primary wide" id="pvToTv">Enviar a TV</button>
+      </div>
+    </aside>
+
+    <!-- COLA ÚNICA -->
+    <aside class="queuecol">
+      <div class="q-head">
+        <b>Cola</b>
+        <span class="q-count" id="qCount">0</span>
+        <div class="grow"></div>
+        <span class="hint num" id="qTime">0:00</span>
+      </div>
+
+      <div class="now" id="nowBlock">
+        <div class="now-label">
+          <span class="eq" id="nowEq"><i></i><i></i><i></i><i></i></span>
+          SONANDO AHORA
+        </div>
+        <div class="now-row">
+          <div class="thumb" id="nowThumb" style="background:#c9ced8">—</div>
+          <div style="min-width:0;flex:1">
+            <div class="now-title" id="nowTitle">Nada en reproducción</div>
+            <div class="now-meta" id="nowMeta">La TV muestra la pantalla de espera</div>
+          </div>
+        </div>
+        <div class="now-bar transport" style="margin-top:10px">
+          <span class="time num" id="nowCur">0:00</span>
+          <div class="bar brand" id="nowBar"><i class="fill"></i><i class="knob"></i></div>
+          <span class="time num" id="nowTot">0:00</span>
+        </div>
+      </div>
+
+      <div class="q-scroll" id="qScroll">
+        <div class="q-sub">A CONTINUACIÓN</div>
+        <div id="qList"></div>
+      </div>
+
+      <div class="q-foot">
+        <button class="btn primary" id="qNext">Reproducir siguiente</button>
+        <button class="btn icon" id="qClear" title="Vaciar cola"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg></button>
+      </div>
+    </aside>
+  </div>
+
+  <!-- PLAYER INFERIOR -->
+  <footer class="playerbar">
+    <div class="pb-left">
+      <div class="thumb sq" id="pbThumb" style="background:#c9ced8">—</div>
+      <div style="min-width:0">
+        <div class="pb-title" id="pbTitle">Sin reproducción</div>
+        <div class="pb-artist" id="pbArtist">Cola vacía</div>
+      </div>
+    </div>
+    <div class="pb-center">
+      <div class="pb-controls">
+        <button class="tp-btn" id="pbPrev"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 6h2v12H7zM19 6v12l-9-6z"/></svg></button>
+        <button class="tp-btn play" id="pbPlay" style="background:var(--brand);border-color:var(--brand)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
+        <button class="tp-btn" id="pbNext"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M15 6h2v12h-2zM5 6l9 6-9 6z"/></svg></button>
+        <span class="time num" id="pbCur" style="margin-left:6px">0:00</span>
+        <div class="bar brand" id="pbBar" style="width:min(38vw,420px)"><i class="fill"></i><i class="knob"></i></div>
+        <span class="time num" id="pbTot">0:00</span>
+      </div>
+    </div>
+    <div class="pb-right">
+      <span class="state-pill" id="pbState">EN ESPERA</span>
+      <div class="vol"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M5 9v6h4l5 4V5L9 9H5z"/><path d="M17 9.5a3.5 3.5 0 0 1 0 5"/></svg><input type="range" id="pbVol" value="90"></div>
+      <button class="btn icon ghost" id="pbFull" title="Pantalla completa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+    </div>
+  </footer>
+</div>
+
+<!-- ================================================================
+     VISTA 2 · TV PLAYER
+     ================================================================ -->
+<div class="view" id="view-tv">
+  <div class="tvwrap">
+    <div class="tvbar">
+      <b>TV SALA</b>
+      <span id="tvBarState">· sin conectar</span>
+      <div class="grow"></div>
+      <button class="devbtn" id="tvSimConnect">Simular TV conectada</button>
+      <button class="devbtn" id="tvBackDj">Volver al panel DJ</button>
+    </div>
+    <div class="tv-stage-outer">
+      <div class="tv-stage" id="tvStage">
+        <div class="tv-idle" id="tvIdle">
+          <div>
+            <div class="tv-logo">🎤 KIT<span>KARAOKE</span></div>
+            <p id="tvIdleMsg">Esperando próxima canción</p>
+          </div>
+        </div>
+        <div class="ov-layer" id="tvOvLayer"></div>
+        <div class="tv-prog"><i id="tvProg"></i></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     VISTA 3 · PEDIDOS QR (CLIENTE)
+     ================================================================ -->
+<div class="view" id="view-qr">
+  <div class="phonewrap">
+    <div class="phone">
+      <div class="ph-top">
+        <div class="ph-brand">🎤 KITKARAOKE</div>
+        <div class="ph-table">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+          Mesa <span id="phTable">7</span>
+        </div>
+        <div class="ph-hint">Elige tu canción y el DJ la recibe al instante.</div>
+      </div>
+      <div class="ph-inner">
+        <div class="ph-search">
+          <input id="phSearch" placeholder="Buscar canción..." autocomplete="off">
+        </div>
+        <div class="ph-list" id="phList"></div>
+        <div class="ph-sheet" id="phSheet">
+          <div style="font-size:11px;font-weight:800;letter-spacing:.07em;color:var(--ink-3)">TU PEDIDO</div>
+          <div style="font-size:16px;font-weight:700;margin-top:6px" id="phPick">—</div>
+          <label class="f" style="margin-top:14px">Tu nombre</label>
+          <input class="f" id="phName" placeholder="Valeria">
+          <div class="row" style="margin-top:14px">
+            <button class="btn grow" id="phCancel">Cancelar</button>
+            <button class="btn primary grow" id="phSend">Pedir canción</button>
+          </div>
+        </div>
+        <div class="ph-ok" id="phOk">
+          <div>
+            <div class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M4 12.5l5 5L20 6.5"/></svg></div>
+            <b>Pedido enviado al DJ</b>
+            <p id="phOkMsg">Te avisamos en la pantalla cuando sea tu turno.</p>
+            <button class="btn primary" style="margin-top:18px" id="phAgain">Pedir otra canción</button>
+          </div>
+        </div>
+      </div>
+      <div class="ph-foot">
+        <div class="hint" style="text-align:center">Mesa <b id="phTable2">7</b> · KITKARAOKE EVENT V5.2</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     MODALES / DRAWER / TOASTS
+     ================================================================ -->
+<div class="scrim" id="scrim"></div>
+
+<!-- Vincular TV -->
+<div class="modal" id="mTv">
+  <div class="modal-head">
+    <b>Vincular TV</b><div class="grow"></div>
+    <button class="btn icon ghost" data-close><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="modal-body" style="text-align:center">
+    <p class="hint" style="margin:0 0 14px">Abre KITKARAOKE en la TV y escribe este código:</p>
+    <div class="code-box" id="codeBox"><span>4</span><span>8</span><span>2</span><span>7</span></div>
+    <p class="hint" style="margin:14px 0 0">Conexión simulada · no se establece WebRTC real en la maqueta.</p>
+    <div class="row" style="margin-top:16px">
+      <button class="btn grow" id="tvNewCode">Generar otro código</button>
+      <button class="btn primary grow" id="tvConnect">Simular TV conectada</button>
+    </div>
+  </div>
+</div>
+
+<!-- Video de mesa -->
+<div class="modal" id="mMesa">
+  <div class="modal-head"><b>Video de mesa</b><div class="grow"></div><button class="btn icon ghost" data-close><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="modal-body">
+    <div id="mMesaText" style="font-size:13.5px">¿Insertar el video de la mesa antes del karaoke?</div>
+    <div class="hint path" style="margin-top:10px" id="mMesaPath">D:\VIDEOS_MESA</div>
+  </div>
+  <div class="modal-foot">
+    <button class="btn" id="mesaNo">Solo el karaoke</button>
+    <button class="btn primary" id="mesaYes">Insertar video</button>
+  </div>
+</div>
+
+<!-- Ajustes -->
+<div class="drawer" id="drawer">
+  <div class="drawer-head">
+    <b style="font-size:15px;font-weight:700">Configuración</b>
+    <div class="grow"></div>
+    <span class="hint">V5.2 WEB</span>
+    <button class="btn icon ghost" data-close><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="drawer-body">
+
+    <div class="set-group">
+      <div class="set-title">GENERAL</div>
+      <div class="set-row">
+        <div class="grow"><b>Modo de operación</b><small>Cambia funciones, navegación y automatismos</small></div>
+        <div class="seg" id="setMode"><button data-m="home">🏠 Home</button><button data-m="pro" class="on">🍸 Bar pro</button></div>
+      </div>
+      <div class="set-row"><div class="grow"><b>Idioma de la interfaz</b><small>Español (Perú)</small></div><select class="f" style="width:130px"><option>Español</option><option>English</option></select></div>
+    </div>
+
+    <div class="set-group">
+      <div class="set-title">CARPETAS</div>
+      <div class="set-row"><div class="grow"><b>Carpeta de karaokes</b><small class="path">D:\KARAOKES</small></div><button class="btn sm" data-pick>Cambiar</button></div>
+      <div class="set-row"><div class="grow"><b>Videos de mesa</b><small class="path">D:\VIDEOS_MESA</small></div><button class="btn sm" data-pick>Cambiar</button></div>
+      <div class="set-row"><div class="grow"><b>Caché</b><small class="path">C:\KITKARAOKE\CACHE</small></div><button class="btn sm" data-pick>Cambiar</button></div>
+    </div>
+
+    <div class="set-group">
+      <div class="set-title">TV</div>
+      <div class="set-row"><div class="grow"><b>Nombre de la TV</b></div><input class="f" style="width:160px" value="TV SALA" id="setTvName"></div>
+      <div class="set-row"><div class="grow"><b>Reconexión automática</b><small>Reintenta si la TV se cae durante el evento</small></div><div class="sw on" data-sw="reconnect"></div></div>
+      <div class="set-row"><div class="grow"><b>TV preferida</b><small>Se vincula sola al iniciar</small></div><select class="f" style="width:180px"><option>Samsung Living Room</option><option>LG Salón</option><option>Chromecast Barra</option></select></div>
+    </div>
+
+    <div class="set-group" id="setQrGroup">
+      <div class="set-title">QR / MESAS</div>
+      <div class="set-row"><div class="grow"><b>Pedidos QR</b><small>Las mesas pueden pedir desde el celular</small></div><div class="sw on" data-sw="qr" id="swQr"></div></div>
+      <div class="set-row"><div class="grow"><b>Cantidad de mesas</b></div><input class="f num" style="width:90px" value="20" id="setTables"></div>
+      <div class="set-row"><div class="grow"><b>Videos de mesa</b><small>Se insertan antes del karaoke pedido por QR</small></div><div class="sw on" data-sw="mesa" id="swMesa"></div></div>
+    </div>
+
+    <div class="set-group">
+      <div class="set-title">CDG</div>
+      <div class="set-row"><div class="grow"><b>Preset</b><small id="setCdgLabel">Alta calidad</small></div><button class="btn sm" id="setCdgGo">Abrir overlays</button></div>
+      <div class="set-row"><div class="grow"><b>Modo avanzado</b><small>Controles técnicos de render</small></div><div class="sw" data-sw="cdgadv2" id="swCdgAdv2"></div></div>
+    </div>
+
+    <div class="set-group">
+      <div class="set-title">RESPALDO</div>
+      <div class="set-row"><div class="grow"><b>Guardar configuración</b><small>Se conserva al recargar el navegador</small></div><button class="btn sm" id="cfgSave">Guardar</button></div>
+      <div class="set-row"><div class="grow"><b>Exportar configuración</b><small>Archivo .json descargable</small></div><button class="btn sm" id="cfgExport">Exportar</button></div>
+      <div class="set-row"><div class="grow"><b>Restaurar configuración</b><small>Vuelve a los valores de fábrica</small></div><button class="btn sm danger" id="cfgReset">Restaurar</button></div>
+    </div>
+
+    <div class="set-group">
+      <div class="set-title">LOGS</div>
+      <div class="set-row"><div class="grow"><b>Nivel de detalle</b><small>Lo que se guarda en el registro</small></div>
+        <div class="seg" id="setLogLevel"><button data-l="INFO" class="on">Info</button><button data-l="WARN">Warn</button><button data-l="ERROR">Error</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<div id="demohud">
+  <div class="dh-top"><span id="dhName">DEMO AUTOMÁTICA</span><div class="grow"></div><button class="devbtn" id="dhStop">Detener</button></div>
+  <div class="dh-step" id="dhStep">Iniciando…</div>
+  <div class="dh-bar"><i id="dhBar"></i></div>
+</div>
+
+<script>
+/* ================================================================
+   BLOQUE 3 / JAVASCRIPT — PARTE A
+   DATA · STATE · UTILIDADES · SYNC · LOGS · TOASTS · ROUTER
+   ================================================================ */
+(function(){
+"use strict";
+
+/* ---------------- UTILIDADES ---------------- */
+const $  = (s,r)=> (r||document).querySelector(s);
+const $$ = (s,r)=> Array.from((r||document).querySelectorAll(s));
+const mmss = s => { s=Math.max(0,Math.round(s)); return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); };
+const now2 = () => { const d=new Date(); return [d.getHours(),d.getMinutes(),d.getSeconds()].map(n=>String(n).padStart(2,"0")).join(":"); };
+const uid  = () => "x"+Math.random().toString(36).slice(2,9);
+const rnd  = a => a[Math.floor(Math.random()*a.length)];
+const esc  = t => String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+const PALETTE = ["#e5007e","#0a9bbd","#5b45c9","#12a150","#e08800","#c2185b","#1f6feb","#00867d","#7a3fd1","#d9480f"];
+const tint = str => { let h=0; for(let i=0;i<str.length;i++) h=(h*31+str.charCodeAt(i))>>>0; return PALETTE[h%PALETTE.length]; };
+const initials = s => s.split(/\s+/).slice(0,2).map(w=>w[0]||"").join("").toUpperCase();
+
+/* ---------------- DATOS DE DEMOSTRACIÓN ---------------- */
+const K = (artist,title,dur,type)=>({id:uid(),artist,title,dur,type,source:"Local",res:type==="CDG"?"CDG 300x216 → 1080p":"1920x1080"});
+
+const CATALOG = [
+  K("Miranda!","Tu Misterioso Alguien",252,"VIDEO"),
+  K("Armonía 10","Siempre Pierdo en el Amor",278,"KARAOKE"),
+  K("Grupo 5","Motor y Motivo",302,"CDG"),
+  K("Corazón Serrano","Mix Te Sueño",374,"VIVO"),
+  K("Karol G","Si Antes Te Hubiera Conocido",214,"VIDEO"),
+  K("Son del Duke","Mix Amor Amor",341,"CORO"),
+  K("Omar Courtz","Koko",192,"VIDEO"),
+  K("Maluma","Hawái",200,"KARAOKE"),
+  K("Agua Marina","Paloma Ajena",295,"CDG"),
+  K("La Bella Luz","Mix Gilda",362,"VIVO"),
+  K("Armonía 10","El Cervecero",266,"KARAOKE"),
+  K("Karol G","Provenza",211,"VIDEO"),
+  K("Grupo 5","Mix Sabrosura",348,"CORO"),
+  K("Agua Marina","Vas a Llorar",283,"CDG"),
+  K("Corazón Serrano","Mix Chicha Peruana",356,"KARAOKE"),
+  K("Marc Anthony","Vivir Mi Vida",248,"KARAOKE"),
+  K("Shakira","Antología",290,"CDG"),
+  K("Los Ángeles Azules","Nunca Es Suficiente",254,"VIDEO"),
+  K("Juan Luis Guerra","Burbujas de Amor",273,"KARAOKE"),
+  K("Rocío Dúrcal","Amor Eterno",286,"CORO"),
+  K("Eddie Santiago","Antes de Que Te Vayas",302,"CDG"),
+  K("Grupo Néctar","Cómo Olvidarla",268,"KARAOKE")
+];
+
+const YT_POOL = [
+  {artist:"Miranda!",title:"Tu Misterioso Alguien (Video Oficial)",dur:255,ch:"Miranda! Oficial",views:"48 M"},
+  {artist:"Miranda!",title:"Tu Misterioso Alguien — Karaoke HD",dur:250,ch:"Karaoke Latino",views:"2.1 M"},
+  {artist:"Miranda!",title:"Tu Misterioso Alguien (En vivo Luna Park)",dur:288,ch:"Miranda! Oficial",views:"9.4 M"},
+  {artist:"Miranda!",title:"Tu Misterioso Alguien — Pista instrumental",dur:249,ch:"Pistas Pro",views:"640 K"},
+  {artist:"Grupo 5",title:"Motor y Motivo (Video Oficial)",dur:304,ch:"Grupo 5",views:"120 M"},
+  {artist:"Karol G",title:"Provenza (Official Video)",dur:212,ch:"Karol G",views:"1.2 B"},
+  {artist:"Agua Marina",title:"Paloma Ajena — En vivo",dur:311,ch:"Agua Marina",views:"33 M"},
+  {artist:"Corazón Serrano",title:"Mix Te Sueño (En vivo)",dur:378,ch:"Corazón Serrano",views:"87 M"}
+];
+
+const NAMES = ["Carlos","Valeria","Andrea","Jhon","Milagros","Diego","Rosa","Kevin","Fiorella","Marco","Lucía","Brayan"];
+
+const HIST_SEED = [
+  {table:4, name:"Carlos",  song:"Armonía 10 - El Cervecero",        state:"Reproducido", ago:"22:14"},
+  {table:11,name:"Milagros",song:"Corazón Serrano - Mix Chicha",     state:"Reproducido", ago:"22:26"},
+  {table:2, name:"Diego",   song:"Marc Anthony - Vivir Mi Vida",     state:"Reproducido", ago:"22:41"},
+  {table:9, name:"Rosa",    song:"Rocío Dúrcal - Amor Eterno",       state:"Rechazado",   ago:"22:47"},
+  {table:7, name:"Valeria", song:"Karol G - Provenza",               state:"Reproducido", ago:"22:55"},
+  {table:15,name:"Kevin",   song:"Maluma - Hawái",                   state:"Reproducido", ago:"23:03"},
+  {table:6, name:"Fiorella",song:"Agua Marina - Vas a Llorar",       state:"Reproducido", ago:"23:12"},
+  {table:12,name:"Andrea",  song:"Grupo 5 - Mix Sabrosura",          state:"En cola",     ago:"23:19"}
+];
+
+const OV_HOME = [
+  {id:"logo",       icon:"🎬", name:"Logo",           desc:"Marca de agua en la esquina"},
+  {id:"mensaje",    icon:"💬", name:"Mensaje",        desc:"Aviso central para los invitados"},
+  {id:"imagen",     icon:"🖼️", name:"Imagen",         desc:"Foto o cartel sobre el video"},
+  {id:"felicitacion",icon:"🎂",name:"Felicitación",   desc:"Feliz cumpleaños, gracias por participar…"}
+];
+const OV_PRO = [
+  {id:"logo",     icon:"🎬", name:"Logo del local",     desc:"Marca de agua permanente"},
+  {id:"mensaje",  icon:"💬", name:"Mensaje",            desc:"Aviso central para el público"},
+  {id:"banner",   icon:"📢", name:"Banner inferior",    desc:"Franja fija con aviso"},
+  {id:"qr",       icon:"🔳", name:"QR de pedidos",      desc:"Código para que las mesas pidan"},
+  {id:"promocion",icon:"🍻", name:"Promoción",          desc:"Oferta de la noche en pantalla"},
+  {id:"publicidad",icon:"📺",name:"Publicidad",         desc:"Espacio para auspiciadores"},
+  {id:"cantante", icon:"🎤", name:"Nombre del cantante",desc:"Quién está cantando ahora"},
+  {id:"mesa",     icon:"🪑", name:"Mesa",               desc:"Número de mesa del cantante"},
+  {id:"proximo",  icon:"⏭️", name:"Próximo cantante",   desc:"Quién sigue en la cola"},
+  {id:"imagen",   icon:"🖼️", name:"Imagen",             desc:"Cumpleaños, patrocinio o cartel"}
+];
+let OVERLAYS = OV_PRO;
+
+/* ---- FASE 2 · fondos CDG y géneros ---- */
+const BG_COLORS=[
+  {id:"negro",    name:"Negro",      css:"#000000"},
+  {id:"azul",     name:"Azul noche", css:"#0a1730"},
+  {id:"vino",     name:"Vino",       css:"#2a0a17"},
+  {id:"degradado",name:"Degradado",  css:"linear-gradient(160deg,#3a0a4a,#0b0e14 70%)"}
+];
+const BG_IMAGES=["Logo_ClubKaraoke.png","Foto_Barra_Neon.jpg","Cartel_Cumpleanos.png"];
+const BG_ANIMS=[{id:"particulas",name:"Partículas"},{id:"ondas",name:"Ondas"},{id:"luces",name:"Luces suaves"}];
+const BG_VIDEOS=["Balada_Romantica_01.mp4","Salsa_Luces_02.mp4","Cumbia_Fiesta_03.mp4","Rock_Escenario_01.mp4","Urbano_Neon_02.mp4"];
+const BG_YT=[
+  {title:"Luces de discoteca · loop 4K",dur:3600,ch:"Visual Loops"},
+  {title:"Neón urbano · fondo vertical HD",dur:2400,ch:"VJ Latino"},
+  {title:"Playa atardecer · balada",dur:1800,ch:"Chill Visuals"},
+  {title:"Escenario de rock · humo y luces",dur:2100,ch:"Stage FX"}
+];
+const GENRE_BG={
+  salsa:{playlist:"Playlist Salsa",   video:"Salsa_Luces_02.mp4"},
+  cumbia:{playlist:"Playlist Fiesta", video:"Cumbia_Fiesta_03.mp4"},
+  balada:{playlist:"Playlist Romántica",video:"Balada_Romantica_01.mp4"},
+  rock:{playlist:"Playlist Escenario",video:"Rock_Escenario_01.mp4"},
+  urbano:{playlist:"Playlist Neón",   video:"Urbano_Neon_02.mp4"},
+  criollo:{playlist:"Playlist Perú",  video:"Balada_Romantica_01.mp4"}
+};
+const ARTIST_GENRE={
+  "Grupo 5":"cumbia","Corazón Serrano":"cumbia","Agua Marina":"cumbia","Armonía 10":"cumbia",
+  "La Bella Luz":"cumbia","Grupo Néctar":"cumbia","Los Ángeles Azules":"cumbia",
+  "Son del Duke":"salsa","Marc Anthony":"salsa","Eddie Santiago":"salsa",
+  "Miranda!":"rock","Shakira":"balada","Rocío Dúrcal":"criollo","Juan Luis Guerra":"balada",
+  "Karol G":"urbano","Omar Courtz":"urbano","Maluma":"urbano","Cortina":"cumbia"
+};
+const genreOf = it => ARTIST_GENRE[it.artist] || "balada";
+
+/* ---------------- ESTADO ---------------- */
+const S = {
+  view:"dj",
+  sec:"karaokes",
+  mode:"pro",                 // home | pro
+  theme:document.documentElement.getAttribute("data-theme")==="night"?"night":"light",
+  tv:{connected:false, name:"TV SALA", code:"4827"},
+  queue:[], current:null, pos:0, playing:false, vol:90,
+  preview:null, pvPos:0, pvPlaying:false,
+  requests:[], hist:HIST_SEED.slice(),
+  logs:[], logLevel:"TODO", logCat:"TODAS",
+  overlay:null, ovTimer:10, ovText:"🎤 Próximo cantante: Carlos · Mesa 4",
+  ovVisible:{logo:true, mensaje:false, banner:false, qr:false, texto:false, imagen:false},
+  cdg:"alta", cdgAdv:false,
+  cfg:{qr:true, mesa:true, mesaMode:"auto", autoSinger:true, reconnect:true, tables:20, autofade:true, countdown:true, echo:true},
+  kFilter:"TODOS", kQuery:"", demo:null, demoRunning:false,
+  /* --- fase 2 --- */
+  bg:{source:"fijo", color:"negro", image:BG_IMAGES[0], anim:"particulas",
+      video:BG_VIDEOS[2], yt:null, genre:null, byGenre:true,
+      playlist:["Salsa_Luces_01","Tropical_02","Club_Rojo_03","Fiesta_04"],
+      auto:false, every:"cancion"},
+  layers:{fondo:true, cdg:true, overlay:true, logo:true},
+  showLayers:false, bgPv:null,
+  night:{active:false, name:"", place:"", songs:0, tables:[], started:0}
+};
+
+/* ¿Esta ventana es solo TV (index.html?view=tv)? */
+const TV_WINDOW = new URLSearchParams(location.search).get("view")==="tv";
+
+/* ---------------- SINCRONIZACIÓN ENTRE VENTANAS ---------------- */
+/* Permite abrir index.html?view=tv en otra pestaña y que refleje el panel. */
+let bus=null, muteBus=false;
+try{ bus = new BroadcastChannel("kitkaraoke_v52"); }catch(e){ bus=null; }
+function share(){
+  if(muteBus) return;
+  const payload={tv:S.tv,current:S.current,pos:S.pos,playing:S.playing,queue:S.queue,overlay:S.overlay,ovText:S.ovText,mode:S.mode};
+  try{ localStorage.setItem("kk_state", JSON.stringify(payload)); }catch(e){}
+  if(bus) bus.postMessage(payload);
+}
+function applyShared(p){
+  if(!p) return;
+  muteBus=true;
+  S.tv=p.tv; S.current=p.current; S.pos=p.pos; S.playing=p.playing;
+  S.queue=p.queue||[]; S.overlay=p.overlay; S.ovText=p.ovText; S.mode=p.mode;
+  renderTV(); renderQueue(); renderNow();
+  muteBus=false;
+}
+if(bus) bus.onmessage = e => { if(S.view==="tv") applyShared(e.data); };
+window.addEventListener("storage", e=>{ if(e.key==="kk_state" && S.view==="tv"){ try{ applyShared(JSON.parse(e.newValue)); }catch(err){} } });
+
+/* ---------------- LOGS ---------------- */
+function log(level,cat,msg){
+  S.logs.push({t:now2(),level,cat,msg});
+  if(S.logs.length>400) S.logs.shift();
+  if(S.sec==="logs") renderLogs();
+}
+[
+  ["INFO","APP","Sesión iniciada · KITKAROKE EVENT PLAYER V5.2 WEB"],
+  ["INFO","ENGINE","Motor de reproducción listo · buffer 128 MB"],
+  ["INFO","SEARCH","Índice local cargado · 22 karaokes"],
+  ["INFO","NETWORK","Red local detectada · 192.168.x.x"],
+  ["INFO","WS","Canal de control abierto"],
+  ["WARN","TV","Ninguna TV vinculada al iniciar"],
+  ["INFO","REQUESTS","Pedidos QR habilitados · 20 mesas"],
+  ["INFO","OVERLAY","Capa logo activada"],
+  ["INFO","FFMPEG","Decodificador CDG cargado · preset alta calidad"],
+  ["ERROR","VIDEO","Formato no disponible en 1 archivo · omitido del índice"]
+].forEach(l=>S.logs.push({t:now2(),level:l[0],cat:l[1],msg:l[2]}));
+
+/* ---------------- TOASTS ---------------- */
+const TICK='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>';
+const BANG='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M12 6v8M12 18v.5"/></svg>';
+function toast(msg,kind,action){
+  const el=document.createElement("div");
+  el.className="toast"+(kind?" "+kind:"");
+  el.innerHTML='<span class="tk">'+(kind==="warn"||kind==="err"?BANG:TICK)+'</span><span>'+esc(msg)+'</span>';
+  if(action){
+    const b=document.createElement("button");
+    b.className="tact"; b.textContent=action.label;
+    b.addEventListener("click",()=>{ action.fn(); el.remove(); });
+    el.appendChild(b);
+  }
+  $("#toasts").appendChild(el);
+  setTimeout(()=>{ el.classList.add("out"); setTimeout(()=>el.remove(),200); },action?5200:2600);
+}
+/* Puerta de funciones BAR PRO: nunca bloquea con alert, siempre explica */
+function proGate(what){
+  if(S.mode==="pro") return true;
+  toast("🔒 "+what+" · disponible en BAR / KARAOKE PRO","lock",{label:"Ver diferencias",fn:openCompare});
+  return false;
+}
+
+/* ---------------- ROUTER DE VISTAS ---------------- */
+function setView(v){
+  S.view=v;
+  $$(".view").forEach(x=>x.classList.toggle("on", x.id==="view-"+v));
+  $$("#devswitch button").forEach(b=>b.classList.toggle("on", b.dataset.view===v));
+  if(v==="tv") renderTV();
+  if(v==="qr") renderPhone();
+}
+function setSec(s){
+  S.sec=s;
+  $$(".sec").forEach(x=>x.classList.toggle("on", x.dataset.sec===s));
+  $$(".rail-item[data-sec]").forEach(b=>b.classList.toggle("on", b.dataset.sec===s));
+  $("#shell").classList.toggle("with-preview", s==="karaokes"||s==="youtube"||s==="qr");
+  if(s==="logs") renderLogs();
+  if(s==="qr") renderRequests();
+  if(s==="overlays") renderOverlays();
+}
+
+/* ================================================================
+   BLOQUE 3 / JAVASCRIPT — PARTE B
+   RENDER · BUSCADOR · COLA · PLAYER · TV · PREVIEW
+   ================================================================ */
+
+const TYPE_LABEL = {KARAOKE:"KARAOKE", CDG:"CDG", VIDEO:"VIDEO", CORO:"CORO", VIVO:"EN VIVO"};
+const KIND_ICON  = {karaoke:"🎤", yt:"📺", qr:"📱", mesa:"🎬", pad:"🎧"};
+
+function thumbHTML(name, cls){
+  return '<div class="thumb '+(cls||"")+'" style="background:'+tint(name)+'">'+esc(initials(name))+'</div>';
+}
+
+/* ---------------- BUSCADOR DE KARAOKES ---------------- */
+const plain = t => String(t).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+function matches(it,q){
+  if(!q) return true;
+  const s=plain(it.artist+" "+it.title);
+  return plain(q).split(/\s+/).every(w=>s.includes(w));
+}
+function renderResults(){
+  const q=S.kQuery, f=S.kFilter;
+  const list=CATALOG.filter(it=>matches(it,q) && (f==="TODOS"||it.type===f));
+  const counts={TODOS:0,KARAOKE:0,CDG:0,VIDEO:0,CORO:0,VIVO:0};
+  CATALOG.filter(it=>matches(it,q)).forEach(it=>{counts.TODOS++;counts[it.type]++;});
+  Object.keys(counts).forEach(k=>{ const el=$("#c"+k); if(el) el.textContent=counts[k]; });
+
+  const box=$("#kResults");
+  if(!list.length){
+    box.innerHTML='<div class="empty"><b>Sin resultados para “'+esc(q)+'”</b>Prueba con el artista, o revisa la carpeta D:\\KARAOKES en ajustes.</div>';
+    return;
+  }
+  box.innerHTML=list.map(it=>(
+    '<div class="res" data-id="'+it.id+'">'+
+      thumbHTML(it.artist)+
+      '<div class="res-main">'+
+        '<div class="res-title">'+esc(it.artist)+' — '+esc(it.title)+'</div>'+
+        '<div class="res-meta"><span class="tag '+it.type+'">'+TYPE_LABEL[it.type]+'</span><span class="num">'+mmss(it.dur)+'</span><i class="sep"></i><span>'+esc(it.source)+'</span></div>'+
+      '</div>'+
+      '<div class="res-acts">'+
+        '<button class="btn sm" data-act="preview">Preview</button>'+
+        '<button class="btn sm primary" data-act="queue">+ Cola</button>'+
+      '</div>'+
+    '</div>'
+  )).join("");
+}
+
+/* ---------------- YOUTUBE ---------------- */
+let ytList=[];
+function renderYT(){
+  const box=$("#ytResults");
+  if(!ytList.length){
+    box.innerHTML='<div class="empty"><b>Busca un tema o pega una URL</b>Los resultados son simulados: no se conecta con YouTube.</div>';
+    return;
+  }
+  box.innerHTML=ytList.map((it,i)=>(
+    '<div class="res" data-yt="'+i+'">'+
+      thumbHTML(it.artist)+
+      '<div class="res-main">'+
+        '<div class="res-title">'+esc(it.title)+'</div>'+
+        '<div class="res-meta"><span class="tag VIDEO">YOUTUBE</span><span class="num">'+mmss(it.dur)+'</span><i class="sep"></i><span>'+esc(it.ch)+'</span><i class="sep"></i><span>'+esc(it.views)+' vistas</span></div>'+
+      '</div>'+
+      '<div class="res-acts">'+
+        '<button class="btn sm" data-act="preview">Preview</button>'+
+        '<button class="btn sm" data-act="now">Reproducir ahora</button>'+
+        '<button class="btn sm primary" data-act="queue">+ Cola</button>'+
+      '</div>'+
+    '</div>'
+  )).join("");
+}
+function ytOp(text,done){
+  $("#ytOpsPanel").style.display="";
+  const row=document.createElement("div");
+  row.style.cssText="display:flex;align-items:center;gap:9px;font-size:12.5px;padding:3px 0";
+  row.innerHTML=(done?'<span style="color:var(--ok)">✓</span>':'<span style="color:var(--cyan)">•</span>')+"<span>"+esc(text)+"</span>";
+  $("#ytOps").appendChild(row);
+  $("#ytOps").scrollTop=9e9;
+}
+function ytSearch(q){
+  $("#ytOps").innerHTML="";
+  ytList=[];renderYT();
+  ytOp("Buscando “"+q+"”…");
+  log("INFO","SEARCH","Búsqueda YouTube simulada · "+q);
+  setTimeout(()=>{
+    const pool=YT_POOL.filter(v=>matches(v,q));
+    ytList=(pool.length?pool:YT_POOL).slice(0,8);
+    ytOp(ytList.length+" resultados",true);
+    renderYT();
+    log("INFO","RESOLVER","Resultados devueltos · "+ytList.length);
+  },600);
+}
+function ytResolve(item,then){
+  ytOp("Resolviendo video…");
+  log("INFO","RESOLVER","Resolviendo stream simulado");
+  setTimeout(()=>{
+    ytOp("Preparando preview…");
+    setTimeout(()=>{
+      ytOp("Listo · 1080p60",true);
+      log("INFO","RESOLVER","YouTube resuelto correctamente");
+      if(then) then();
+    },600);
+  },600);
+}
+
+/* ---------------- COLA ---------------- */
+function qItem(src,extra){
+  return Object.assign({
+    qid:uid(), artist:src.artist, title:src.title, dur:src.dur,
+    type:src.type||"VIDEO", kind:"karaoke", source:src.source||"Local", res:src.res||"1920x1080"
+  }, extra||{});
+}
+function addToQueue(item,opts){
+  opts=opts||{};
+  const it=qItem(item,opts.extra);
+  if(opts.front) S.queue.unshift(it); else S.queue.push(it);
+  renderQueue(); share();
+  log("INFO","ENGINE","Añadido a la cola · "+it.artist+" — "+it.title);
+  if(!opts.silent) toast("Agregado a cola");
+  if(!S.current && S.tv.connected && opts.autostart!==false && !S.demoRunning) playNext();
+  return it;
+}
+function removeFromQueue(qid){
+  const i=S.queue.findIndex(x=>x.qid===qid);
+  if(i<0) return;
+  const [it]=S.queue.splice(i,1);
+  renderQueue(); share();
+  log("INFO","ENGINE","Retirado de la cola · "+it.title);
+  toast("Retirado de la cola");
+}
+function moveInQueue(qid,dir){
+  const i=S.queue.findIndex(x=>x.qid===qid), j=i+dir;
+  if(i<0||j<0||j>=S.queue.length) return;
+  const t=S.queue[i]; S.queue[i]=S.queue[j]; S.queue[j]=t;
+  renderQueue(); share();
+}
+function reorder(from,to){
+  if(from===to||from<0||to<0) return;
+  const [it]=S.queue.splice(from,1);
+  S.queue.splice(to,0,it);
+  renderQueue(); share();
+  log("INFO","ENGINE","Cola reordenada · "+it.title+" → posición "+(to+1));
+}
+function renderQueue(){
+  const box=$("#qList");
+  $("#qCount").textContent=S.queue.length;
+  const total=S.queue.reduce((a,b)=>a+b.dur,0)+(S.current?Math.max(0,S.current.dur-S.pos):0);
+  $("#qTime").textContent=mmss(total);
+  $("#railBadge").classList.toggle("show", S.requests.length>0);
+  $("#railBadge").textContent=S.requests.length;
+
+  if(!S.queue.length){
+    box.innerHTML='<div class="empty" style="padding:26px 10px"><b>La cola está vacía</b>Busca un karaoke y pulsa <b style="display:inline">+ Cola</b>.</div>';
+    return;
+  }
+  box.innerHTML=S.queue.map((it,i)=>(
+    '<div class="qi'+(i===0?" next":"")+'" draggable="true" data-qid="'+it.qid+'" data-i="'+i+'">'+
+      '<span class="qi-idx num">'+String(i+1).padStart(2,"0")+'</span>'+
+      thumbHTML(it.artist,"sq")+
+      '<div style="min-width:0">'+
+        '<div class="qi-title">'+esc(it.artist)+' — '+esc(it.title)+'</div>'+
+        '<div class="qi-meta">'+(KIND_ICON[it.kind]||"🎤")+' <span>'+esc(it.source)+'</span><i class="sep"></i><span class="num">'+mmss(it.dur)+'</span></div>'+
+      '</div>'+
+      '<div class="qi-acts">'+
+        '<button class="mini" data-q="up" title="Subir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 19V6M6 11l6-6 6 6"/></svg></button>'+
+        '<button class="mini" data-q="down" title="Bajar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v13M6 13l6 6 6-6"/></svg></button>'+
+        '<button class="mini del" data-q="del" title="Quitar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>'+
+      '</div>'+
+    '</div>'
+  )).join("");
+}
+
+/* ---------------- REPRODUCCIÓN (TV) ---------------- */
+function playNext(auto){
+  if(!S.queue.length && S.current && !auto){
+    toast("No hay nada más en la cola · sigue sonando "+S.current.title,"warn");
+    return;
+  }
+  if(!S.queue.length){
+    S.current=null; S.playing=false; S.pos=0;
+    renderNow(); renderTV(); renderQueue(); share();
+    log("INFO","ENGINE","Cola terminada · pantalla de espera");
+    if(auto) toast("Cola terminada","info");
+    return;
+  }
+  S.current=S.queue.shift(); S.pos=0; S.playing=true;
+  if(S.night.active){
+    S.night.songs++;
+    if(S.current.table && S.night.tables.indexOf(S.current.table)<0) S.night.tables.push(S.current.table);
+  }
+  if(S.mode==="pro" && S.bg.byGenre && S.current.type==="CDG") applyGenreBg(S.current);
+  if(S.mode==="pro" && S.cfg.autoSinger && S.current.name)
+    showOverlay("🎤 Canta "+S.current.name+" · Mesa "+S.current.table,10);
+  renderNow(); renderQueue(); renderTV(); renderNight(); share();
+  log("INFO","VIDEO","Reproduciendo en TV · "+S.current.artist+" — "+S.current.title);
+}
+function playNowItem(item,extra){
+  if(!S.tv.connected){ toast("Vincula una TV para enviar contenido","warn"); openModal("#mTv"); return; }
+  if(S.current) S.queue.unshift(S.current);
+  S.current=qItem(item,extra); S.pos=0; S.playing=true;
+  renderNow(); renderQueue(); renderTV(); share();
+  log("INFO","VIDEO","Enviado a TV · "+S.current.artist+" — "+S.current.title);
+  toast("Enviado a la TV");
+}
+function renderNow(){
+  const c=S.current;
+  $("#nowEq").parentElement.parentElement.classList.toggle("paused",!S.playing);
+  if(!c){
+    $("#nowThumb").style.background="#c9ced8"; $("#nowThumb").textContent="—";
+    $("#nowTitle").textContent="Nada en reproducción";
+    $("#nowMeta").textContent=S.tv.connected?"La TV muestra la pantalla de espera":"TV sin conectar";
+    $("#nowTot").textContent="0:00";
+    $("#pbTitle").textContent="Sin reproducción";
+    $("#pbArtist").textContent=S.queue.length?"Pulsa reproducir siguiente":"Cola vacía";
+    $("#pbThumb").style.background="#c9ced8"; $("#pbThumb").textContent="—";
+  }else{
+    $("#nowThumb").style.background=tint(c.artist); $("#nowThumb").textContent=initials(c.artist);
+    $("#nowTitle").textContent=c.artist+" — "+c.title;
+    $("#nowMeta").innerHTML=(KIND_ICON[c.kind]||"🎤")+" "+esc(c.source)+' · <span class="tag '+c.type+'">'+(TYPE_LABEL[c.type]||c.type)+'</span>';
+    $("#nowTot").textContent=mmss(c.dur);
+    $("#pbTitle").textContent=c.title;
+    $("#pbArtist").textContent=c.artist;
+    $("#pbThumb").style.background=tint(c.artist); $("#pbThumb").textContent=initials(c.artist);
+  }
+  const st=$("#pbState");
+  st.className="state-pill "+(!c?"":(S.playing?(S.tv.connected?"tv":"pv"):"pause"));
+  st.textContent = !c ? "EN ESPERA" : (S.playing ? (S.tv.connected?"EN TV":"LOCAL") : "PAUSADO");
+  setPlayIcon($("#pbPlay"), S.playing);
+  const nb=$("#nowBg");
+  if(nb) nb.classList.toggle("on", S.mode==="pro" && !!c && c.type==="CDG");
+  updateProgress();
+}
+function setPlayIcon(btn,playing){
+  btn.innerHTML = playing
+    ? '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+}
+function updateProgress(){
+  const c=S.current, p=c?Math.min(S.pos/c.dur,1):0;
+  ["#nowBar","#pbBar"].forEach(sel=>{
+    const b=$(sel); if(!b) return;
+    $(".fill",b).style.width=(p*100)+"%";
+    $(".knob",b).style.left=(p*100)+"%";
+  });
+  $("#nowCur").textContent=mmss(S.pos*(c?1:0));
+  $("#pbCur").textContent=mmss(S.pos*(c?1:0));
+  $("#pbTot").textContent=c?mmss(c.dur):"0:00";
+  const tp=$("#tvProg"); if(tp) tp.style.width=(p*100)+"%";
+
+  const pv=S.preview, q=pv?Math.min(S.pvPos/pv.dur,1):0;
+  const pb=$("#pvBar");
+  if(pb){ $(".fill",pb).style.width=(q*100)+"%"; $(".knob",pb).style.left=(q*100)+"%"; }
+  $("#pvCur").textContent=pv?mmss(S.pvPos):"0:00";
+}
+
+/* ---------------- TV ---------------- */
+function bgDesc(b){
+  b=b||S.bg;
+  if(b.source==="fijo")      return "FONDO FIJO · "+(BG_COLORS.find(c=>c.id===b.color)||{}).name;
+  if(b.source==="imagen")    return "IMAGEN · "+b.image;
+  if(b.source==="animacion") return "ANIMACIÓN · "+((BG_ANIMS.find(a=>a.id===b.anim)||{}).name||"");
+  if(b.source==="video")     return "VIDEO LOCAL · "+b.video;
+  if(b.source==="youtube")   return "YOUTUBE · solo fondo visual";
+  if(b.source==="playlist")  return "PLAYLIST · "+(b.playlist[0]||"vacía");
+  return "FONDO";
+}
+function bgLayerHTML(b){
+  b=b||S.bg; let css="", extra="", move="";
+  if(b.source==="fijo"){
+    css=(BG_COLORS.find(c=>c.id===b.color)||BG_COLORS[0]).css;
+  }else if(b.source==="imagen"){
+    const t=tint(b.image); css="linear-gradient(140deg,"+t+"99,#0b0e14 72%)";
+  }else if(b.source==="animacion"){
+    const t=tint(b.anim); css="linear-gradient(120deg,#0b0e14,"+t+"aa,#0b0e14)"; move=" bg-move";
+    extra = b.anim==="particulas" ? '<div class="bg-dots"></div>'
+          : b.anim==="ondas"      ? '<div class="bg-waves"></div>' : '';
+  }else{
+    const name = b.source==="video" ? b.video : (b.source==="playlist" ? (b.playlist[0]||"") : (b.yt||"YouTube"));
+    const t=tint(name);
+    css="linear-gradient(120deg,"+t+",#120610 58%,"+t+"cc)"; move=" bg-move";
+    extra='<div class="bg-waves"></div>';
+  }
+  return '<div class="bg-sim'+move+'" style="background:'+css+'"></div>'+extra;
+}
+/* Devuelve la composición completa de una pista, para el preview o para la TV */
+function compHTML(it,scope){
+  const L = S.mode==="pro" ? S.layers : {fondo:true,cdg:true,overlay:true,logo:true};
+  const isCdg = it.type==="CDG";
+  const B = (scope==="pv" && S.bgPv) ? S.bgPv : S.bg;
+  const ly=LYRICS[it.title.length%LYRICS.length];
+  const big  = scope==="tv" ? "clamp(18px,3.4vw,38px)" : "16.5px";
+  const small= scope==="tv" ? "clamp(13px,2.2vw,24px)" : "12px";
+  let h='<div class="comp">';
+  h += (isCdg && L.fondo)
+     ? bgLayerHTML(B)
+     : '<div class="bg-sim" style="background:radial-gradient(90% 70% at 50% 20%,'+tint(it.artist)+'55,#0b0e14 72%)"></div>';
+  if(scope==="tv")
+    h+='<div class="tv-top"><div class="tv-track"><div class="a">'+esc(it.artist.toUpperCase())+'</div><div class="t">'+esc(it.title)+'</div></div></div>';
+  if(L.cdg)
+    h+='<div class="cdg-box"><div class="cdg-line" style="font-size:'+big+'">'+ly[0]+'</div><div class="cdg-line2" style="font-size:'+small+'">'+ly[1]+'</div></div>';
+  if(L.logo && S.ovVisible.logo) h+='<div class="ov-logo">🎤 KITKARAOKE</div>';
+  if(isCdg) h+='<div class="comp-label">'+(L.fondo?((scope==="pv"&&S.bgPv?"PRUEBA · ":"")+esc(bgDesc(B))):"FONDO OCULTO")+'</div>';
+  if(scope==="pv") h+='<div class="pv-live-tag"><i class="b"></i>PREVIEW · SOLO DJ</div>';
+  h+='</div>';
+  return h;
+}
+const LYRICS=[["Y aunque no lo <i>quieras</i> ver","así es como te recuerdo"],["Motor y <i>motivo</i> de mi vida","tú eres mi razón de ser"],["Esta noche <i>canta</i> conmigo","y que se pare la fiesta"]];
+function renderTV(){
+  const c=S.current, idle=$("#tvIdle");
+  const stage=$("#tvStage");
+  $$(".tv-live-block",stage).forEach(x=>x.remove());
+  $("#tvBarState").textContent = S.tv.connected ? "· conectada" : "· sin conectar";
+  $("#tvIdleMsg").textContent = S.tv.connected ? "Esperando próxima canción" : "Vincula esta pantalla desde el panel DJ";
+
+  if(c && S.tv.connected){
+    idle.style.display="none";
+    const l=LYRICS[(c.title.length)%LYRICS.length];
+    const nx=S.queue[0];
+    const block=document.createElement("div");
+    block.className="tv-live-block";
+    block.style.cssText="position:absolute;inset:0";
+    block.innerHTML = compHTML(c,"tv") +
+      (nx?'<div class="tv-next"><span><small>SIGUIENTE</small>'+esc(nx.artist+" — "+nx.title)+'</span></div>':'');
+    stage.insertBefore(block, $("#tvOvLayer"));
+  }else{
+    idle.style.display="grid";
+  }
+  renderOverlayLayer($("#tvOvLayer"));
+  const pill=$("#tvPill");
+  pill.classList.toggle("live",S.tv.connected);
+  $("#tvPillText").textContent = S.tv.connected ? S.tv.name+" conectada" : "TV sin conectar";
+  updateProgress();
+}
+
+/* ---------------- PREVIEW PRIVADO ---------------- */
+function setPreview(item){
+  S.preview=Object.assign({},item);
+  S.pvPos=0; S.pvPlaying=true;
+  renderPreview();
+  log("INFO","ENGINE","Preview privado · "+item.artist+" — "+item.title+" (la TV no cambia)");
+  toast("Preview privado · solo tú lo ves","info");
+}
+function renderPreview(){
+  const p=S.preview, stage=$("#pvStage");
+  if(!p){
+    stage.innerHTML='<div class="pv-idle" id="pvIdle">Elige <b>Preview</b> en cualquier resultado para revisarlo aquí sin tocar la TV.</div>';
+    $("#pvTitle").textContent="Sin material en preview";
+    $("#pvArtist").textContent="—";
+    ["#pvSource","#pvRes","#pvType","#pvDur"].forEach(s=>$(s).textContent="—");
+    $("#pvTot").textContent="0:00";
+    setPlayIcon($("#pvPlay"),false);
+    $$("#previewCol .pv-actions .btn").forEach(b=>b.disabled=true);
+    updateProgress();
+    return;
+  }
+  $$("#previewCol .pv-actions .btn").forEach(b=>b.disabled=false);
+  stage.innerHTML = compHTML(p,"pv") + '<div class="ov-layer" id="pvOvLayer"></div>';
+  const L = S.mode==="pro" ? S.layers : {overlay:true};
+  if(L.overlay) renderOverlayLayer($("#pvOvLayer"));
+  renderLayersBox();
+  $("#pvTitle").textContent=p.title;
+  $("#pvArtist").textContent=p.artist;
+  $("#pvSource").textContent=p.source||"Local";
+  $("#pvRes").textContent=p.res||"1920x1080";
+  $("#pvType").textContent=TYPE_LABEL[p.type]||p.type||"VIDEO";
+  $("#pvDur").textContent=mmss(p.dur);
+  $("#pvTot").textContent=mmss(p.dur);
+  setPlayIcon($("#pvPlay"),S.pvPlaying);
+  updateProgress();
+}
+
+/* ================================================================
+   BLOQUE 3 / JAVASCRIPT — PARTE C
+   PEDIDOS QR · OVERLAYS · LOGS · AJUSTES · MODALES
+   ================================================================ */
+
+/* ---------------- PEDIDOS QR (lado DJ) ---------------- */
+function agoText(ts){
+  const s=Math.round((Date.now()-ts)/1000);
+  if(s<60) return "hace "+s+" segundos";
+  const m=Math.round(s/60);
+  return "hace "+m+(m===1?" minuto":" minutos");
+}
+function newRequest(table,name,song){
+  const r={id:uid(),table,name,song,ts:Date.now()};
+  S.requests.unshift(r);
+  renderRequests(); renderQueue();
+  log("INFO","REQUESTS","Pedido QR recibido · Mesa "+table+" · "+song.artist+" — "+song.title);
+  toast("Nuevo pedido · Mesa "+table,"info");
+  return r;
+}
+function renderRequests(){
+  const on = S.mode==="pro" && S.cfg.qr;
+  $("#qrDisabled").style.display = on?"none":"";
+  $("#qrLive").style.display = on?"":"none";
+  $("#reqCount").textContent=S.requests.length;
+  $("#railBadge").classList.toggle("show",S.requests.length>0);
+  $("#railBadge").textContent=S.requests.length;
+  $("#histCount").textContent=S.hist.length+" pedidos esta noche";
+
+  const box=$("#reqList");
+  if(!S.requests.length){
+    box.innerHTML='<div class="empty" style="padding:28px"><b>No hay pedidos pendientes</b>Los pedidos de las mesas aparecen aquí en cuanto se envían.</div>';
+  }else{
+    box.innerHTML=S.requests.map(r=>(
+      '<div class="req'+(Date.now()-r.ts<8000?' fresh':'')+'" data-req="'+r.id+'">'+
+        '<div class="table-mark"><small>MESA</small><b>'+r.table+'</b></div>'+
+        '<div style="min-width:0">'+
+          '<div class="req-song">'+esc(r.song.artist)+' — '+esc(r.song.title)+'</div>'+
+          '<div class="req-meta">'+esc(r.name)+' · '+agoText(r.ts)+' · <span class="num">'+mmss(r.song.dur)+'</span></div>'+
+        '</div>'+
+        '<div class="req-acts">'+
+          '<button class="btn sm" data-r="preview">Preview</button>'+
+          '<button class="btn sm" data-r="reject">Rechazar</button>'+
+          '<button class="btn sm primary" data-r="accept">Aceptar</button>'+
+        '</div>'+
+      '</div>'
+    )).join("");
+  }
+  $("#reqHist").innerHTML=S.hist.slice().reverse().map(h=>(
+    '<div class="req" style="border-color:var(--line);background:var(--surface-2)">'+
+      '<div class="table-mark" style="background:var(--surface-3);color:var(--ink-2)"><small>MESA</small><b>'+h.table+'</b></div>'+
+      '<div style="min-width:0"><div class="req-song" style="font-weight:500">'+esc(h.song)+'</div>'+
+      '<div class="req-meta">'+esc(h.name)+' · '+esc(h.ago)+'</div></div>'+
+      '<span class="tag '+(h.state==="Rechazado"?"":"CORO")+'">'+esc(h.state)+'</span>'+
+    '</div>'
+  )).join("");
+}
+let pendingReq=null;
+function acceptRequest(id,silent){
+  const i=S.requests.findIndex(r=>r.id===id);
+  if(i<0) return;
+  const r=S.requests[i];
+  const finish=(withVideo)=>{
+    S.requests.splice(S.requests.findIndex(x=>x.id===r.id),1);
+    if(withVideo){
+      addToQueue({artist:"Video de mesa",title:"Mesa "+r.table+" · "+r.name,dur:22,type:"VIDEO",source:"D:\\VIDEOS_MESA"},
+                 {silent:true,extra:{kind:"mesa",table:r.table}});
+      log("INFO","VIDEO","Video de mesa insertado antes del karaoke · Mesa "+r.table);
+    }
+    addToQueue(r.song,{silent:true,extra:{kind:"qr",source:r.name.toUpperCase()+" · MESA "+r.table,table:r.table,name:r.name}});
+    S.hist.push({table:r.table,name:r.name,song:r.song.artist+" - "+r.song.title,state:"En cola",ago:now2().slice(0,5)});
+    renderRequests();
+    if(!silent) toast("Pedido aceptado · Mesa "+r.table);
+    log("INFO","REQUESTS","Pedido aceptado · Mesa "+r.table);
+  };
+  const canVideo = S.mode==="pro" && S.cfg.mesa && S.cfg.mesaMode!=="nunca";
+  if(canVideo && S.cfg.mesaMode==="preguntar" && !silent){
+    pendingReq=finish;
+    $("#mMesaText").textContent="Mesa "+r.table+" pidió “"+r.song.title+"”. ¿Insertar el video de la mesa antes del karaoke?";
+    openModal("#mMesa");
+  }else finish(canVideo);
+}
+function rejectRequest(id){
+  const i=S.requests.findIndex(r=>r.id===id);
+  if(i<0) return;
+  const r=S.requests[i];
+  S.requests.splice(i,1);
+  S.hist.push({table:r.table,name:r.name,song:r.song.artist+" - "+r.song.title,state:"Rechazado",ago:now2().slice(0,5)});
+  renderRequests(); renderQueue();
+  log("WARN","REQUESTS","Pedido rechazado · Mesa "+r.table);
+  toast("Pedido rechazado","warn");
+}
+function simulateRequest(){
+  if(S.mode!=="pro"||!S.cfg.qr){ toast("Activa el modo bar para recibir pedidos","warn"); return; }
+  newRequest(1+Math.floor(Math.random()*S.cfg.tables), rnd(NAMES), rnd(CATALOG));
+}
+
+/* ---------------- OVERLAYS ---------------- */
+function renderOverlays(){
+  $("#ovList").innerHTML=OVERLAYS.map(o=>(
+    '<div class="ov-item'+(S.ovVisible[o.id]?" on":"")+'" data-ov="'+o.id+'">'+
+      '<div class="ov-ic">'+o.icon+'</div>'+
+      '<div><b>'+esc(o.name)+'</b><small>'+esc(o.desc)+'</small></div>'+
+      '<div class="sw brand'+(S.ovVisible[o.id]?" on":"")+'"></div>'+
+    '</div>'
+  )).join("");
+  const vis=OVERLAYS.filter(o=>S.ovVisible[o.id]).map(o=>o.name);
+  $("#ovState").textContent = vis.length? vis.join(" · ") : "Ninguna visible";
+  renderOverlayLayer($("#ovPreviewLayer"));
+  renderOverlayLayer($("#tvOvLayer"));
+  $("#setCdgLabel").textContent = {rapida:"Rápida",alta:"Alta calidad",maxima:"Máxima fidelidad"}[S.cdg];
+}
+function renderOverlayLayer(layer){
+  if(!layer) return;
+  let h="";
+  if(S.ovVisible.logo)   h+='<div class="ov-logo">🎤 KITKARAOKE</div>';
+  if(S.ovVisible.qr)     h+='<div class="ov-qr"><div class="qrimg"></div><small>PIDE TU CANCIÓN</small></div>';
+  if(S.ovVisible.banner) h+='<div class="ov-banner">Hoy 2x1 en cerveza hasta la 1 a.m. · Pide tu karaoke desde la mesa</div>';
+  if(S.ovVisible.imagen) h+='<div class="ov-card top">🖼️ Auspicia: Cervecería del Sur</div>';
+  if(S.ovVisible.felicitacion) h+='<div class="ov-card top">🎂 Feliz cumpleaños, Mesa 7</div>';
+  if(S.ovVisible.promocion) h+='<div class="ov-banner" style="background:linear-gradient(90deg,#0a9bbd,#12a150)">🍻 Promo de la noche · 2x1 en cerveza hasta la 1 a.m.</div>';
+  if(S.ovVisible.publicidad) h+='<div class="ov-card top" style="left:auto;right:18px;transform:none">📺 Espacio publicitario</div>';
+  if(S.ovVisible.cantante) h+='<div class="ov-card" style="bottom:26%">🎤 Canta Valeria</div>';
+  if(S.ovVisible.mesa) h+='<div class="ov-card" style="bottom:26%;left:18px;transform:none">🪑 Mesa 7</div>';
+  if(S.ovVisible.proximo) h+='<div class="ov-card top" style="left:18px;transform:none">⏭️ Próximo: Carlos · Mesa 4</div>';
+  if(S.ovVisible.mensaje||S.overlay) h+='<div class="ov-card">'+esc(S.overlay||S.ovText)+'</div>';
+  layer.innerHTML=h;
+}
+let ovTimeout=null;
+function showOverlay(text,secs){
+  S.overlay=text; S.ovVisible.mensaje=false;
+  renderOverlays(); renderTV(); share();
+  log("INFO","OVERLAY","Mensaje mostrado en TV · "+(secs?secs+" s":"permanente"));
+  toast("Overlay activado");
+  clearTimeout(ovTimeout);
+  if(secs) ovTimeout=setTimeout(hideOverlay,secs*1000);
+}
+function hideOverlay(){
+  if(!S.overlay) return;
+  S.overlay=null; renderOverlays(); renderTV(); share();
+  log("INFO","OVERLAY","Mensaje oculto");
+}
+
+/* ---------------- LOGS ---------------- */
+const SIMPLE_CATS=["APP","TV","VIDEO","ENGINE"];
+function renderLogs(){
+  const home = S.mode==="home";
+  $("#logCat").style.display = home?"none":"";
+  const rows=S.logs.filter(l=>
+    (S.logLevel==="TODO"||l.level===S.logLevel) &&
+    (home ? SIMPLE_CATS.indexOf(l.cat)>=0 : (S.logCat==="TODAS"||l.cat===S.logCat))
+  );
+  if(home){
+    $("#logCount").textContent=rows.length+" líneas";
+    $("#logList").innerHTML = rows.length ? rows.map(l=>(
+      '<div class="logrow" style="grid-template-columns:64px 58px minmax(0,1fr)"><span class="t">'+l.t+'</span>'+
+      '<span class="lv '+l.level+'">'+(l.level==="ERROR"?"ERROR":l.level==="WARN"?"AVISO":"OK")+'</span>'+
+      '<span class="logmsg">'+esc(l.msg)+'</span></div>'
+    )).join("") : '<div class="empty" style="padding:30px"><b>Todo en orden</b>Aquí aparece lo que va pasando durante la sesión.</div>';
+    const b0=$('.sec[data-sec="logs"] .sec-body'); if(b0) b0.scrollTop=b0.scrollHeight;
+    return;
+  }
+  $("#logCount").textContent=rows.length+" de "+S.logs.length+" líneas";
+  $("#logList").innerHTML = rows.length ? rows.map(l=>(
+    '<div class="logrow"><span class="t">'+l.t+'</span><span class="lv '+l.level+'">'+l.level+'</span>'+
+    '<span class="cat">'+l.cat+'</span><span class="logmsg">'+esc(l.msg)+'</span></div>'
+  )).join("") : '<div class="empty" style="padding:30px"><b>Sin líneas para este filtro</b>Cambia el nivel o la categoría.</div>';
+  const body=$('.sec[data-sec="logs"] .sec-body');
+  if(body) body.scrollTop=body.scrollHeight;
+}
+function logsText(){ return S.logs.map(l=>l.t+"  "+l.level.padEnd(6)+" "+l.cat+"\n"+l.msg).join("\n"); }
+function download(name,text,type){
+  const b=new Blob([text],{type:type||"text/plain"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(b); a.download=name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+}
+
+/* ---------------- TEMA LIGHT / NIGHT ---------------- */
+const THEME_KEY="kitkaraoke_theme";
+function updateThemeUI(){
+  const night=S.theme==="night",icon=$("#themeIcon"),quick=$("#btnTheme"),label=$("#themeState");
+  if(icon) icon.textContent=night?"☀️":"🌙";
+  if(quick){quick.title=night?"Cambiar a tema Claro":"Cambiar a tema Noche";quick.setAttribute("aria-label",quick.title)}
+  $$("#setTheme button").forEach(b=>b.classList.toggle("on",b.dataset.theme===S.theme));
+  if(label) label.textContent=night?"KITKARAOKE NIGHT":"KITKARAOKE LIGHT";
+}
+function setTheme(theme,notify=true){
+  theme=theme==="night"?"night":"light";
+  S.theme=theme;document.documentElement.classList.add("theme-transition");document.documentElement.setAttribute("data-theme",theme);
+  try{localStorage.setItem(THEME_KEY,theme)}catch(e){}
+  updateThemeUI();setTimeout(()=>document.documentElement.classList.remove("theme-transition"),240);
+  if(notify) toast(theme==="night"?"🌙 KITKARAOKE NIGHT activado":"☀️ KITKARAOKE LIGHT activado","info");
+}
+function toggleTheme(){setTheme(S.theme==="night"?"light":"night")}
+
+/* ---------------- MODO CASA / BAR ---------------- */
+function setMode(m){
+  S.mode=m;
+  const pro = m==="pro";
+  OVERLAYS = pro ? OV_PRO : OV_HOME;
+
+  /* identidad del modo */
+  $("#modeBadge").textContent = pro ? "🍸 BAR PRO" : "🏠 HOME";
+  $("#modeBadge").classList.toggle("casa",!pro);
+  $$("#setMode button").forEach(b=>b.classList.toggle("on",b.dataset.m===m));
+
+  /* navegación: HOME solo karaokes, youtube, overlays y ajustes */
+  ["dj","qr","logs"].forEach(sec=>{
+    const it=$('.rail-item[data-sec="'+sec+'"]');
+    if(it){ it.style.display = pro?"":"none"; it.style.opacity="1"; }
+  });
+  if(!pro && ["dj","qr","logs"].indexOf(S.sec)>=0) setSec("karaokes");
+
+  /* cabecera */
+  $("#btnNight").style.display = pro?"":"none";
+  const qrBtn=$('.topbar-actions [data-goto="qr"]'); if(qrBtn) qrBtn.style.display=pro?"":"none";
+  if(!pro && S.night.active) endNight(true);
+
+  /* preview: completo en PRO, básico en HOME */
+  $("#pvLayersRow").style.display = pro?"":"none";
+  if(!pro){ S.showLayers=false; $("#pvLayers").classList.remove("on"); }
+  $("#pvToTv").style.display = pro?"":"none";
+  $("#pvQueue").classList.toggle("wide",!pro);
+
+  /* ajustes dinámicos */
+  $$("#drawer [data-only]").forEach(g=>{ g.style.display = (g.dataset.only===m)?"":"none"; });
+
+  /* textos */
+  $("#qrModeNote").textContent = pro
+    ? "Las mesas envían sus canciones desde el celular"
+    : "Los pedidos de mesa son parte de BAR / KARAOKE PRO";
+  const advRow=$("#swCdgAdv") ? $("#swCdgAdv").parentElement : null;
+  if(advRow) advRow.style.display = pro?"":"none";
+  if(!pro){
+    S.cdgAdv=false;
+    $("#swCdgAdv").classList.remove("on"); $("#swCdgAdv2").classList.remove("on");
+    $("#cdgSimple").style.display=""; $("#cdgAdv").style.display="none";
+  }
+  const ovDesc=$('.sec[data-sec="overlays"] .sec-desc');
+  if(ovDesc) ovDesc.textContent = pro
+    ? "Capas que se dibujan encima de la TV del público"
+    : "Lo que aparece encima del video: logo, mensajes y felicitaciones";
+  const logDesc=$('.sec[data-sec="logs"] .sec-desc');
+  if(logDesc) logDesc.textContent = pro
+    ? "Registro técnico para soporte · sin datos sensibles"
+    : "Lo que ha ido pasando en esta sesión";
+
+  renderRequests(); renderQueue(); renderOverlays(); renderBg();
+  renderLogs(); renderNight(); renderPreview(); renderTV(); share();
+  log("INFO","APP","Modo de operación · "+(pro?"BAR / KARAOKE PRO":"HOME"));
+  toast(pro?"BAR / KARAOKE PRO activado":"HOME activado · operación sencilla");
+}
+
+/* ---------------- MODALES ---------------- */
+function openModal(sel){ $("#scrim").classList.add("on"); $(sel).classList.add("on"); }
+function closeAll(){
+  $("#scrim").classList.remove("on");
+  $$(".modal,.drawer").forEach(m=>m.classList.remove("on"));
+}
+function connectTv(){
+  S.tv.connected=true;
+  renderTV(); renderNow(); share();
+  closeAll();
+  log("INFO","TV",S.tv.name+" conectada · sesión simulada");
+  log("INFO","WEBRTC","Conexión simulada establecida");
+  toast("TV conectada");
+}
+
+/* ---------------- PANTALLA DEL CLIENTE (QR) ---------------- */
+let phPick=null;
+function renderPhone(){
+  const q=$("#phSearch").value.trim();
+  const list=CATALOG.filter(it=>matches(it,q)).slice(0,14);
+  $("#phList").innerHTML = list.length ? list.map(it=>(
+    '<div class="ph-song" data-ph="'+it.id+'">'+thumbHTML(it.artist,"sq")+
+    '<div style="min-width:0"><b>'+esc(it.title)+'</b><small>'+esc(it.artist)+' · '+mmss(it.dur)+'</small></div>'+
+    '<button class="btn sm primary">Pedir</button></div>'
+  )).join("") : '<div class="empty"><b>No encontramos esa canción</b>Prueba con el nombre del artista.</div>';
+}
+
+/* ================================================================
+   BLOQUE 3 / JAVASCRIPT — PARTE D
+   EVENTOS · DRAG & DROP · MOTOR DE DEMO · ARRANQUE
+   ================================================================ */
+
+/* ---------------- NAVEGACIÓN ---------------- */
+$("#devswitch").addEventListener("click",e=>{ const b=e.target.closest("button[data-view]"); if(b) setView(b.dataset.view); });
+$("#rail").addEventListener("click",e=>{
+  const b=e.target.closest(".rail-item[data-sec]");
+  if(b){ setSec(b.dataset.sec); return; }
+  if(e.target.closest("#railSettings")) openModal("#drawer");
+});
+document.addEventListener("click",e=>{
+  const g=e.target.closest("[data-goto]"); if(g){ setView("dj"); setSec(g.dataset.goto); }
+  const d=e.target.closest("[data-devview]"); if(d) setView(d.dataset.devview);
+  if(e.target.closest("[data-close]")) closeAll();
+  const pick=e.target.closest("[data-pick]");
+  if(pick){ toast("Selector de carpetas simulado","info"); log("INFO","APP","Selector de carpeta simulado · sin acceso al disco"); }
+});
+$("#scrim").addEventListener("click",closeAll);
+$("#btnSettings").addEventListener("click",()=>openModal("#drawer"));
+$("#btnLinkTv").addEventListener("click",()=>openModal("#mTv"));
+$("#btnSecondScreen").addEventListener("click",()=>{ setView("tv"); toast("Segunda pantalla simulada","info"); });
+
+/* ---------------- BUSCADOR KARAOKES ---------------- */
+$("#kSearch").addEventListener("input",e=>{ S.kQuery=e.target.value.trim(); renderResults(); });
+$("#kSearch").addEventListener("change",()=>{ if(S.kQuery) log("INFO","SEARCH","Búsqueda local completada · "+CATALOG.filter(i=>matches(i,S.kQuery)).length+" resultados"); });
+$("#kFilters").addEventListener("click",e=>{
+  const c=e.target.closest(".chip"); if(!c) return;
+  S.kFilter=c.dataset.f;
+  $$("#kFilters .chip").forEach(x=>x.classList.toggle("on",x===c));
+  renderResults();
+});
+$("#kResults").addEventListener("click",e=>{
+  const btn=e.target.closest("[data-act]"); if(!btn) return;
+  const row=e.target.closest(".res"); const it=CATALOG.find(x=>x.id===row.dataset.id);
+  if(!it) return;
+  if(btn.dataset.act==="preview") setPreview(it);
+  if(btn.dataset.act==="queue")   addToQueue(it,{extra:{kind:"karaoke"}});
+});
+
+/* ---------------- YOUTUBE ---------------- */
+$("#ytSearch").addEventListener("keydown",e=>{ if(e.key==="Enter"&&e.target.value.trim()) ytSearch(e.target.value.trim()); });
+$("#ytAdd").addEventListener("click",()=>{
+  const u=$("#ytUrl").value.trim();
+  if(!u){ toast("Pega una URL de YouTube","warn"); return; }
+  $("#ytOps").innerHTML="";
+  ytOp("Leyendo URL…");
+  const it=rnd(YT_POOL);
+  ytResolve(it,()=>{ addToQueue(it,{extra:{kind:"yt",source:"YouTube",type:"VIDEO"}}); $("#ytUrl").value=""; });
+});
+$("#ytResults").addEventListener("click",e=>{
+  const btn=e.target.closest("[data-act]"); if(!btn) return;
+  const it=ytList[+e.target.closest(".res").dataset.yt]; if(!it) return;
+  const a=btn.dataset.act;
+  ytResolve(it,()=>{
+    if(a==="preview") setPreview(Object.assign({},it,{source:"YouTube",res:"1080p60",type:"VIDEO"}));
+    if(a==="queue")   addToQueue(it,{extra:{kind:"yt",source:"YouTube",type:"VIDEO"}});
+    if(a==="now")     playNowItem(it,{kind:"yt",source:"YouTube",type:"VIDEO"});
+  });
+});
+
+/* ---------------- COLA + DRAG & DROP ---------------- */
+$("#qList").addEventListener("click",e=>{
+  const b=e.target.closest("[data-q]"); if(!b) return;
+  const qid=e.target.closest(".qi").dataset.qid;
+  if(b.dataset.q==="up")   moveInQueue(qid,-1);
+  if(b.dataset.q==="down") moveInQueue(qid,1);
+  if(b.dataset.q==="del")  removeFromQueue(qid);
+});
+let dragFrom=null;
+$("#qList").addEventListener("dragstart",e=>{
+  const row=e.target.closest(".qi"); if(!row) return;
+  dragFrom=+row.dataset.i; row.classList.add("drag");
+  e.dataTransfer.effectAllowed="move";
+  try{ e.dataTransfer.setData("text/plain",row.dataset.qid); }catch(err){}
+});
+$("#qList").addEventListener("dragover",e=>{
+  e.preventDefault();
+  const row=e.target.closest(".qi"); if(!row) return;
+  $$("#qList .qi").forEach(r=>r.classList.toggle("over",r===row));
+});
+$("#qList").addEventListener("dragleave",e=>{ const row=e.target.closest(".qi"); if(row) row.classList.remove("over"); });
+$("#qList").addEventListener("drop",e=>{
+  e.preventDefault();
+  const row=e.target.closest(".qi");
+  $$("#qList .qi").forEach(r=>r.classList.remove("over","drag"));
+  if(row&&dragFrom!==null) reorder(dragFrom,+row.dataset.i);
+  dragFrom=null;
+});
+$("#qList").addEventListener("dragend",()=>{ $$("#qList .qi").forEach(r=>r.classList.remove("over","drag")); dragFrom=null; });
+$("#qNext").addEventListener("click",()=>{
+  if(!S.tv.connected){ toast("Vincula una TV para reproducir","warn"); openModal("#mTv"); return; }
+  playNext();
+});
+$("#qClear").addEventListener("click",()=>{
+  if(!S.queue.length) return;
+  S.queue=[]; renderQueue(); share();
+  log("WARN","ENGINE","Cola vaciada por el DJ");
+  toast("Cola vacía","warn");
+});
+
+/* ---------------- PLAYER INFERIOR ---------------- */
+$("#pbPlay").addEventListener("click",()=>{
+  if(!S.current){ $("#qNext").click(); return; }
+  S.playing=!S.playing; renderNow(); renderTV(); share();
+  log("INFO","ENGINE",S.playing?"Reproducción reanudada":"Reproducción en pausa");
+});
+$("#pbNext").addEventListener("click",()=>{ if(S.current||S.queue.length) playNext(); });
+$("#pbPrev").addEventListener("click",()=>{ if(S.current){ S.pos=0; updateProgress(); share(); toast("Volviendo al inicio","info"); } });
+$("#pbFull").addEventListener("click",()=>setView("tv"));
+$("#pbVol").addEventListener("input",e=>{ S.vol=+e.target.value; });
+function seekOn(bar,setter){
+  bar.addEventListener("click",e=>{
+    const r=bar.getBoundingClientRect();
+    setter(Math.min(1,Math.max(0,(e.clientX-r.left)/r.width)));
+  });
+}
+seekOn($("#pbBar"),p=>{ if(S.current){ S.pos=p*S.current.dur; updateProgress(); share(); } });
+seekOn($("#nowBar"),p=>{ if(S.current){ S.pos=p*S.current.dur; updateProgress(); share(); } });
+seekOn($("#pvBar"),p=>{ if(S.preview){ S.pvPos=p*S.preview.dur; updateProgress(); } });
+
+/* ---------------- PREVIEW ---------------- */
+$("#pvPlay").addEventListener("click",()=>{ if(!S.preview) return; S.pvPlaying=!S.pvPlaying; setPlayIcon($("#pvPlay"),S.pvPlaying); });
+$("#pvPrev").addEventListener("click",()=>{ if(S.preview) { S.pvPos=0; updateProgress(); } });
+$("#pvNext").addEventListener("click",()=>{
+  if(!S.preview) return;
+  const i=CATALOG.findIndex(x=>x.title===S.preview.title);
+  setPreview(CATALOG[(i+1+CATALOG.length)%CATALOG.length]);
+});
+$("#pvQueue").addEventListener("click",()=>{ if(S.preview) addToQueue(S.preview,{extra:{kind:S.preview.source==="YouTube"?"yt":"karaoke",source:S.preview.source}}); });
+$("#pvPlayNow").addEventListener("click",()=>{ if(S.preview) playNowItem(S.preview,{kind:"karaoke",source:S.preview.source}); });
+$("#pvToTv").addEventListener("click",()=>{ if(S.preview) playNowItem(S.preview,{kind:"karaoke",source:S.preview.source}); });
+$("#pvVol").addEventListener("input",()=>{});
+
+/* ---------------- PEDIDOS QR (DJ) ---------------- */
+$("#reqList").addEventListener("click",e=>{
+  const b=e.target.closest("[data-r]"); if(!b) return;
+  const id=e.target.closest("[data-req]").dataset.req;
+  const r=S.requests.find(x=>x.id===id); if(!r) return;
+  if(b.dataset.r==="accept")  acceptRequest(id);
+  if(b.dataset.r==="reject")  rejectRequest(id);
+  if(b.dataset.r==="preview") setPreview(r.song);
+});
+$("#btnSimReq").addEventListener("click",simulateRequest);
+$("#btnGoBar").addEventListener("click",()=>setMode("pro"));
+$("#btnGoCompare").addEventListener("click",()=>openCompare());
+$("#mesaYes").addEventListener("click",()=>{ closeAll(); if(pendingReq){ pendingReq(true); pendingReq=null; } });
+$("#mesaNo").addEventListener("click",()=>{ closeAll(); if(pendingReq){ pendingReq(false); pendingReq=null; } });
+
+/* ---------------- OVERLAYS ---------------- */
+$("#ovList").addEventListener("click",e=>{
+  const it=e.target.closest("[data-ov]"); if(!it) return;
+  const id=it.dataset.ov;
+  S.ovVisible[id]=!S.ovVisible[id];
+  renderOverlays(); renderTV(); share();
+  log("INFO","OVERLAY","Capa "+id+" "+(S.ovVisible[id]?"activada":"desactivada"));
+  toast("Capa "+id+(S.ovVisible[id]?" activada":" oculta"));
+});
+$("#ovTimer").addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  S.ovTimer=+b.dataset.t;
+  $$("#ovTimer button").forEach(x=>x.classList.toggle("on",x===b));
+});
+$("#ovShow").addEventListener("click",()=>{ S.ovText=$("#ovText").value; showOverlay(S.ovText,S.ovTimer); });
+$("#ovHide").addEventListener("click",()=>{ hideOverlay(); toast("Overlay oculto","info"); });
+$("#ovHideAll").addEventListener("click",()=>{
+  Object.keys(S.ovVisible).forEach(k=>S.ovVisible[k]=false);
+  hideOverlay(); renderOverlays(); renderTV(); share();
+  toast("Todas las capas ocultas","info");
+});
+$("#cdgSimple").addEventListener("click",e=>{
+  const b=e.target.closest(".qopt"); if(!b) return;
+  S.cdg=b.dataset.cdg;
+  $$("#cdgSimple .qopt").forEach(x=>x.classList.toggle("on",x===b));
+  $("#setCdgLabel").textContent={rapida:"Rápida",alta:"Alta calidad",maxima:"Máxima fidelidad"}[S.cdg];
+  log("INFO","FFMPEG","Preset CDG · "+S.cdg);
+  toast("Calidad CDG: "+b.querySelector("b").textContent);
+});
+
+/* ---------------- LOGS ---------------- */
+$("#logLevels").addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  S.logLevel=b.dataset.l;
+  $$("#logLevels button").forEach(x=>x.classList.toggle("on",x===b));
+  renderLogs();
+});
+$("#logCat").addEventListener("change",e=>{ S.logCat=e.target.value; renderLogs(); });
+$("#logRefresh").addEventListener("click",()=>{ log("INFO","APP","Registro actualizado manualmente"); renderLogs(); toast("Registro actualizado","info"); });
+$("#logCopy").addEventListener("click",()=>{
+  const t=logsText();
+  if(navigator.clipboard) navigator.clipboard.writeText(t).then(()=>toast("Logs copiados")).catch(()=>toast("No se pudo copiar","err"));
+  else toast("Portapapeles no disponible","warn");
+});
+$("#logDl").addEventListener("click",()=>{ download("kitkaraoke-logs.txt",logsText()); toast("Archivo .txt generado"); });
+$("#logClear").addEventListener("click",()=>{ S.logs=[]; log("INFO","APP","Registro limpiado"); renderLogs(); toast("Registro limpio","warn"); });
+
+/* ---------------- AJUSTES ---------------- */
+$("#setMode").addEventListener("click",e=>{ const b=e.target.closest("button"); if(b) setMode(b.dataset.m); });
+$("#setLogLevel").addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  $$("#setLogLevel button").forEach(x=>x.classList.toggle("on",x===b));
+  log("INFO","APP","Nivel de registro · "+b.dataset.l);
+});
+document.addEventListener("click",e=>{
+  const sw=e.target.closest(".sw[data-sw]"); if(!sw) return;
+  const on=!sw.classList.contains("on");
+  sw.classList.toggle("on",on);
+  const k=sw.dataset.sw;
+  if(k==="qr")      { S.cfg.qr=on; renderRequests(); }
+  if(k==="mesa")    S.cfg.mesa=on;
+  if(k==="bygenre"||k==="bygenre2"){ S.bg.byGenre=on; $$('[data-sw="bygenre"],[data-sw="bygenre2"]').forEach(x=>x.classList.toggle("on",on)); }
+  if(k==="bgauto")  { S.bg.auto=on; toast(on?"La playlist de fondos rotará sola":"Rotación automática apagada","info"); }
+  if(k==="autosinger") S.cfg.autoSinger=on;
+  if(k==="nightqr") S.cfg.qr=on;
+  if(k==="nightmesa") S.cfg.mesa=on;
+  if(k==="reconnect") S.cfg.reconnect=on;
+  if(k==="autofade") S.cfg.autofade=on;
+  if(k==="countdown") S.cfg.countdown=on;
+  if(k==="echo")    S.cfg.echo=on;
+  if(k==="cdgadv"||k==="cdgadv2"){
+    S.cdgAdv=on;
+    $("#swCdgAdv").classList.toggle("on",on);
+    $("#swCdgAdv2").classList.toggle("on",on);
+    $("#cdgSimple").style.display=on?"none":"";
+    $("#cdgAdv").style.display=on?"":"none";
+  }
+  log("INFO","APP","Ajuste "+k+" · "+(on?"ON":"OFF"));
+});
+$("#setTvName").addEventListener("change",e=>{ S.tv.name=e.target.value||"TV SALA"; renderTV(); share(); toast("Nombre de TV actualizado"); });
+$("#setTables").addEventListener("change",e=>{ S.cfg.tables=Math.max(1,+e.target.value||20); });
+$("#setCdgGo").addEventListener("click",()=>{ closeAll(); setSec("overlays"); });
+$("#cfgSave").addEventListener("click",()=>{
+  try{ localStorage.setItem("kk_cfg",JSON.stringify({mode:S.mode,cfg:S.cfg,cdg:S.cdg,tv:{name:S.tv.name}})); toast("Configuración guardada"); }
+  catch(e){ toast("No se pudo guardar","err"); }
+  log("INFO","APP","Configuración guardada");
+});
+$("#cfgExport").addEventListener("click",()=>{
+  download("kitkaraoke-config.json",JSON.stringify({mode:S.mode,cfg:S.cfg,cdg:S.cdg,tv:S.tv.name},null,2),"application/json");
+  toast("Configuración exportada");
+});
+$("#cfgReset").addEventListener("click",()=>{
+  S.cfg={qr:true,mesa:true,mesaMode:"auto",autoSinger:true,reconnect:true,tables:20,autofade:true,countdown:true,echo:true};
+  S.cdg="alta"; setMode("pro");
+  try{ localStorage.removeItem("kk_cfg"); }catch(e){}
+  toast("Configuración restaurada","warn");
+  log("WARN","APP","Configuración restaurada a valores de fábrica");
+});
+
+/* ---------------- MODO DJ ---------------- */
+$("#djPads").addEventListener("click",e=>{
+  const b=e.target.closest("[data-pad]"); if(!b) return;
+  addToQueue({artist:"Cortina",title:b.dataset.pad,dur:14,type:"VIDEO",source:"Efectos"},{front:true,extra:{kind:"pad",source:"Efectos"},silent:true});
+  toast("Cortina “"+b.dataset.pad+"” al inicio de la cola");
+});
+["mic1","mic2","mus"].forEach(id=>{
+  const el=$("#"+id); if(!el) return;
+  el.addEventListener("input",e=>{ $("#"+id+"v").textContent=e.target.value; });
+});
+$("#djPanic").addEventListener("click",()=>{
+  S.playing=false; renderNow(); renderTV(); share();
+  log("WARN","ENGINE","Silencio de emergencia activado por el DJ");
+  toast("Silencio de emergencia · todo en pausa","warn");
+});
+
+/* ---------------- TV / VINCULACIÓN ---------------- */
+$("#tvConnect").addEventListener("click",connectTv);
+$("#tvSimConnect").addEventListener("click",connectTv);
+$("#tvBackDj").addEventListener("click",()=>setView("dj"));
+$("#tvNewCode").addEventListener("click",()=>{
+  S.tv.code=String(1000+Math.floor(Math.random()*9000));
+  $("#codeBox").innerHTML=S.tv.code.split("").map(d=>"<span>"+d+"</span>").join("");
+  log("INFO","TV","Nuevo código de vinculación generado");
+});
+$("#btnOpenTv").addEventListener("click",()=>{
+  share();
+  const u=location.href.split("?")[0]+"?view=tv";
+  const w=window.open(u,"kitkaraoke_tv","width=1280,height=760");
+  if(!w) toast("El navegador bloqueó la ventana emergente","warn");
+  else toast("TV abierta en otra ventana","info");
+});
+
+/* ---------------- PANTALLA DEL CLIENTE ---------------- */
+$("#phSearch").addEventListener("input",renderPhone);
+$("#phList").addEventListener("click",e=>{
+  const row=e.target.closest("[data-ph]"); if(!row) return;
+  phPick=CATALOG.find(x=>x.id===row.dataset.ph);
+  $("#phPick").textContent=phPick.artist+" — "+phPick.title;
+  $("#phSheet").classList.add("on");
+});
+$("#phCancel").addEventListener("click",()=>$("#phSheet").classList.remove("on"));
+$("#phSend").addEventListener("click",()=>{
+  if(!phPick) return;
+  const name=$("#phName").value.trim()||"Mesa "+$("#phTable").textContent;
+  $("#phSheet").classList.remove("on");
+  $("#phOkMsg").textContent="Tu canción “"+phPick.title+"” está en la lista del DJ.";
+  $("#phOk").classList.add("on");
+  newRequest(+$("#phTable").textContent, name, phPick);
+});
+$("#phAgain").addEventListener("click",()=>{ $("#phOk").classList.remove("on"); $("#phSearch").value=""; renderPhone(); });
+
+/* ---------------- TECLADO ---------------- */
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape") closeAll();
+  const t=e.target.tagName;
+  if(t==="INPUT"||t==="SELECT"||t==="TEXTAREA") return;
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="k"){ e.preventDefault(); setView("dj"); setSec("karaokes"); $("#kSearch").focus(); }
+  if(e.code==="Space"&&S.view==="dj"){ e.preventDefault(); $("#pbPlay").click(); }
+});
+
+/* ---------------- RELOJ DE REPRODUCCIÓN ---------------- */
+setInterval(()=>{
+  let dirty=false;
+  if(S.playing&&S.current){
+    S.pos+=0.25;
+    if(S.pos>=S.current.dur){
+      if(TV_WINDOW){ S.pos=S.current.dur; }   /* la ventana TV solo refleja */
+      else { playNext(true); return; }
+    }
+    dirty=true;
+  }
+  if(S.pvPlaying&&S.preview){
+    S.pvPos+=0.25;
+    if(S.pvPos>=S.preview.dur){ S.pvPos=S.preview.dur; S.pvPlaying=false; setPlayIcon($("#pvPlay"),false); }
+    dirty=true;
+  }
+  if(dirty) updateProgress();
+},250);
+setInterval(()=>{ if(S.playing&&S.current) share(); },1000);
+
+/* ================================================================
+   MOTOR DE DEMO
+   ================================================================ */
+let demoTimer=null;
+function stopDemo(){
+  clearTimeout(demoTimer); demoTimer=null;
+  S.demoRunning=false;
+  $("#demohud").classList.remove("on");
+}
+function runDemo(name,steps){
+  stopDemo();
+  S.demoRunning=true;
+  $("#dhName").textContent=name;
+  $("#demohud").classList.add("on");
+  let i=0;
+  const step=()=>{
+    if(i>=steps.length){
+      $("#dhStep").textContent="Secuencia completada";
+      $("#dhBar").style.width="100%";
+      demoTimer=setTimeout(()=>{ stopDemo(); toast("Demo completada"); },1400);
+      S.demoRunning=false;
+      return;
+    }
+    const s=steps[i];
+    $("#dhStep").textContent=(i+1)+". "+s.t;
+    $("#dhBar").style.width=((i+1)/steps.length*100)+"%";
+    try{ if(s.run) s.run(); }catch(err){ console.error(err); }
+    i++;
+    demoTimer=setTimeout(step,s.d||1600);
+  };
+  step();
+}
+$("#dhStop").addEventListener("click",()=>{ stopDemo(); toast("Demo detenida","warn"); });
+
+/* --- DEMO AUTOMÁTICA (flujo completo QR → video de mesa → karaoke) --- */
+let demoReq=null;
+$("#btnDemoAuto").addEventListener("click",()=>{
+  const song=CATALOG.find(x=>x.title==="Motor y Motivo");
+  runDemo("DEMO BAR / KARAOKE PRO",[
+    {t:"BAR PRO activo · TV SALA conectada",d:1600,run:()=>{
+      setView("dj"); setSec("karaokes");
+      S.queue=[]; S.current=null; S.requests=[]; hideOverlay();
+      S.bg.source="fijo"; S.bg.color="negro"; S.bg.byGenre=true; S.bgPv=null;
+      if(S.mode!=="pro") setMode("pro");
+      if(!S.tv.connected) connectTv();
+      renderBg(); renderQueue(); renderNow(); renderTV(); share();
+    }},
+    {t:"La Mesa 7 busca “Motor y Motivo” desde su celular",d:1800,run:()=>{
+      setView("qr"); $("#phOk").classList.remove("on");
+      $("#phSearch").value="Motor"; renderPhone();
+    }},
+    {t:"Valeria escribe su nombre y envía el pedido",d:1800,run:()=>{
+      phPick=song; $("#phPick").textContent=song.artist+" — "+song.title;
+      $("#phName").value="Valeria"; $("#phSheet").classList.add("on");
+    }},
+    {t:"Pedido enviado al DJ",d:1500,run:()=>{
+      $("#phSheet").classList.remove("on");
+      $("#phOkMsg").textContent="Tu canción “"+song.title+"” está en la lista del DJ.";
+      $("#phOk").classList.add("on");
+      demoReq=newRequest(7,"Valeria",song);
+    }},
+    {t:"El panel DJ recibe el pedido de la Mesa 7",d:1700,run:()=>{ setView("dj"); setSec("qr"); }},
+    {t:"El DJ acepta · se inserta el video de la Mesa 7",d:1900,run:()=>{ if(demoReq) acceptRequest(demoReq.id,true); }},
+    {t:"Cola: 01 video de mesa · 02 VALERIA · MESA 7",d:1700,run:()=>{ setSec("karaokes"); }},
+    {t:"El video de la Mesa 7 aparece en la TV",d:2400,run:()=>{ playNext(); setView("tv"); }},
+    {t:"Termina el video · comienza el karaoke CDG",d:2000,run:()=>{ playNext(); }},
+    {t:"Género detectado: CUMBIA · fondo elegido solo",d:2400,run:()=>{ applyGenreBg(S.current||song); renderTV(); }},
+    {t:"El video de fondo queda detrás de las letras CDG",d:2200,run:()=>{ renderTV(); }},
+    {t:"Overlay en pantalla: 🎤 Valeria · Mesa 7",d:2400,run:()=>{ showOverlay("🎤 Valeria · Mesa 7",0); }},
+    {t:"El overlay desaparece y el karaoke continúa",d:2000,run:()=>{ hideOverlay(); }},
+    {t:"El DJ cambia el fondo sin cortar la canción",d:2600,run:()=>{ setBg({source:"video",video:BG_VIDEOS[4]}); }},
+    {t:"La barra de progreso no se reinició · sigue sonando",d:2000,run:()=>{ setView("dj"); setSec("karaokes"); }},
+    {t:"La canción termina · entra el siguiente elemento",d:2000,run:()=>{ playNext(true); }},
+    {t:"Logs y cola actualizados",d:1800,run:()=>{ setSec("logs"); }},
+    {t:"Vuelta al panel DJ · todo sincronizado",d:1500,run:()=>{ setSec("karaokes"); }}
+  ]);
+});
+
+/* --- DEMO HOME · lo simple que es --- */
+$("#btnDemoHome").addEventListener("click",()=>{
+  const song=CATALOG.find(x=>x.title==="Paloma Ajena");
+  runDemo("DEMO HOME",[
+    {t:"Cambiamos a modo HOME · desaparece lo del negocio",d:2200,run:()=>{
+      setView("dj"); setMode("home"); setSec("karaokes");
+      S.queue=[]; S.current=null; hideOverlay();
+      Object.keys(S.ovVisible).forEach(k=>S.ovVisible[k]=(k==="logo"));
+      S.bg.source="fijo"; S.bg.color="negro";
+      if(!S.tv.connected) connectTv();
+      renderBg(); renderOverlays(); renderQueue(); renderNow(); renderTV(); share();
+    }},
+    {t:"Buscar una canción · nada más",d:1800,run:()=>{ $("#kSearch").value="paloma"; S.kQuery="paloma"; renderResults(); }},
+    {t:"Preview sencillo: escuchar antes de cantar",d:2200,run:()=>{ setPreview(song); }},
+    {t:"Agregar a la cola",d:1600,run:()=>{ addToQueue(song,{extra:{kind:"karaoke"}}); }},
+    {t:"Reproducir",d:2000,run:()=>{ playNext(); }},
+    {t:"La TV muestra el karaoke",d:2200,run:()=>{ setView("tv"); }},
+    {t:"Cambiar el fondo negro por una imagen",d:2400,run:()=>{ setBg({source:"imagen",image:BG_IMAGES[1]}); }},
+    {t:"Una felicitación sencilla en pantalla",d:2400,run:()=>{ S.ovVisible.felicitacion=true; renderOverlays(); renderTV(); share(); }},
+    {t:"Eso es todo: buscar, cantar, felicitar",d:1800,run:()=>{ setView("dj"); setSec("karaokes"); }}
+  ]);
+});
+
+/* --- DEMO FONDOS CDG PRO --- */
+$("#btnDemoBg").addEventListener("click",()=>{
+  const cdg=CATALOG.find(x=>x.title==="Antología");
+  runDemo("DEMO FONDOS CDG PRO",[
+    {t:"BAR PRO · abrimos un archivo CDG",d:1800,run:()=>{
+      setView("dj"); if(S.mode!=="pro") setMode("pro");
+      setSec("overlays"); if(!S.tv.connected) connectTv();
+      S.bg.byGenre=false; S.bg.source="fijo"; S.bg.color="negro"; S.bgPv=null;
+      renderBg();
+    }},
+    {t:"Lo mandamos al preview privado · la TV no cambia",d:2200,run:()=>{ setPreview(cdg); }},
+    {t:"Fondo negro: así se ve un CDG de siempre",d:2000,run:()=>{ setBg({source:"fijo",color:"negro"},"Fondo negro"); }},
+    {t:"Cambiamos a un video local de la carpeta FONDOS",d:2400,run:()=>{ setBg({source:"video",video:BG_VIDEOS[1]}); }},
+    {t:"Ahora un video de YouTube · solo como imagen",d:2400,run:()=>{ setBg({source:"youtube",yt:BG_YT[1].title}); }},
+    {t:"Activamos un overlay encima de todo",d:2200,run:()=>{ showOverlay("🎤 Canta Valeria · Mesa 7",0); }},
+    {t:"Composición: fondo → CDG → overlay → logo",d:2600,run:()=>{ S.showLayers=true; $("#pvLayersBtn").textContent="Ocultar capas"; renderLayersBox(); }},
+    {t:"Recién ahora lo enviamos a la TV",d:2200,run:()=>{ playNowItem(cdg,{kind:"karaoke",source:"Local"}); setView("tv"); }},
+    {t:"Y cambiamos el fondo con la canción sonando",d:2600,run:()=>{ setBg({source:"video",video:BG_VIDEOS[3]}); }},
+    {t:"El karaoke nunca se cortó",d:1800,run:()=>{ hideOverlay(); setView("dj"); setSec("overlays"); }}
+  ]);
+});
+
+/* --- DEMO PREVIEW PRIVADO --- */
+$("#btnDemoPreview").addEventListener("click",()=>{
+  const tvSong=CATALOG.find(x=>x.title==="Vivir Mi Vida");
+  const pvSong=CATALOG.find(x=>x.title==="Mix Te Sueño");
+  runDemo("DEMO PREVIEW PRIVADO",[
+    {t:"La TV está sonando para los clientes",d:2000,run:()=>{
+      setView("dj"); setSec("karaokes");
+      if(!S.tv.connected) connectTv();
+      if(!S.current){ S.current=qItem(tvSong,{kind:"karaoke"}); S.pos=42; S.playing=true; renderNow(); renderTV(); share(); }
+    }},
+    {t:"El DJ busca otro tema mientras la TV sigue igual",d:1800,run:()=>{ $("#kSearch").value="corazon"; S.kQuery="corazon"; renderResults(); }},
+    {t:"Abre el preview privado · la TV no cambia",d:2600,run:()=>{ setPreview(pvSong); }},
+    {t:"TV: sonando para los clientes · Preview: solo el DJ",d:2600,run:()=>{ toast("La TV sigue con “"+S.current.title+"”","info"); }},
+    {t:"Ahora sí: el DJ pulsa Enviar a TV",d:2200,run:()=>{ playNowItem(pvSong,{kind:"karaoke",source:"Local"}); }},
+    {t:"La TV cambia recién ahora",d:1800,run:()=>{ setView("tv"); }},
+    {t:"Vuelta al panel DJ",d:1400,run:()=>{ setView("dj"); }}
+  ]);
+});
+
+/* --- DEMO YOUTUBE --- */
+$("#btnDemoYT").addEventListener("click",()=>{
+  runDemo("DEMO YOUTUBE",[
+    {t:"El DJ abre la sección YouTube",d:1400,run:()=>{ setView("dj"); setSec("youtube"); $("#ytUrl").value=""; }},
+    {t:"Busca “Miranda Tu Misterioso Alguien”",d:2200,run:()=>{ $("#ytSearch").value="Miranda Tu Misterioso Alguien"; ytSearch("Miranda Tu Misterioso Alguien"); }},
+    {t:"Resolviendo el video seleccionado",d:2400,run:()=>{ ytResolve(YT_POOL[1]); }},
+    {t:"Preview listo · sigue sin tocar la TV",d:2400,run:()=>{ setPreview(Object.assign({},YT_POOL[1],{source:"YouTube",res:"1080p60",type:"VIDEO"})); }},
+    {t:"Se agrega a la cola central",d:1800,run:()=>{ addToQueue(YT_POOL[1],{extra:{kind:"yt",source:"YouTube",type:"VIDEO"}}); }}
+  ]);
+});
+
+
+/* ================================================================
+   FASE 2 · FONDOS CDG · CAPAS · MODO NOCHE · COMPARATIVA
+   ================================================================ */
+
+/* ---------------- MARCADO INYECTADO ---------------- */
+function buildPhase2DOM(){
+
+  /* --- panel de fondos CDG dentro de Overlays --- */
+  $('.sec[data-sec="overlays"] .sec-body').insertAdjacentHTML("beforeend",
+    '<div class="panel" id="bgPanel">'+
+      '<div class="panel-head"><b>Fondos CDG</b><span class="hint">Lo que se ve detrás de las letras</span>'+
+      '<div class="grow"></div><span class="bgnow" id="bgNow">—</span></div>'+
+      '<div class="panel-body">'+
+        '<div class="filters" id="bgSources"></div>'+
+        '<div id="bgBody" style="margin-top:15px"></div>'+
+        '<div id="bgGenre"></div>'+
+      '</div>'+
+    '</div>');
+
+  /* --- cambio de fondo en vivo, junto a lo que está sonando --- */
+  $("#nowBlock").insertAdjacentHTML("beforeend",
+    '<div class="now-bg" id="nowBg"><span class="src">FONDO</span>'+
+      '<button class="btn xs" data-qbg="v1">Video 1</button>'+
+      '<button class="btn xs" data-qbg="v2">Video 2</button>'+
+      '<button class="btn xs" data-qbg="img">Imagen</button>'+
+      '<button class="btn xs" data-qbg="yt">YouTube</button></div>');
+
+  /* --- ajustes dinámicos --- */
+  const g=$$("#drawer .set-group");
+  const gGeneral=g[0], gFolders=g[1], gTv=g[2], gQr=g[3], gCdg=g[4], gBackup=g[5], gLogs=g[6];
+  gQr.dataset.only="pro"; gCdg.dataset.only="pro"; gBackup.dataset.only="pro"; gLogs.dataset.only="pro";
+  const fr=$$(".set-row",gFolders); fr[1].dataset.only="pro"; fr[2].dataset.only="pro";
+  gFolders.insertAdjacentHTML("beforeend",
+    '<div class="set-row" data-only="pro"><div class="grow"><b>Fondos CDG</b><small class="path">D:\\KITKARAOKE\\FONDOS</small></div><button class="btn sm" data-pick>Cambiar</button></div>');
+
+  gGeneral.insertAdjacentHTML("beforeend",
+    '<div class="set-row"><div class="grow"><b>Comparar modos</b><small>Qué incluye HOME y qué añade BAR PRO</small></div><button class="btn sm" id="btnCompare">Ver tabla</button></div>');
+
+  gGeneral.insertAdjacentHTML("afterend",
+    '<div class="set-group" id="setAppearance"><div class="set-title">APARIENCIA</div>'+
+      '<div class="set-row" style="display:block"><div class="grow" style="margin-bottom:10px"><b>Tema de la interfaz</b><small id="themeState">KITKARAOKE LIGHT</small></div>'+
+        '<div class="theme-options" id="setTheme">'+
+          '<button class="theme-choice" data-theme="light"><b>☀️ Claro</b><small>Interfaz luminosa para casa, oficina o trabajo de día.</small></button>'+
+          '<button class="theme-choice" data-theme="night"><b>🌙 Noche</b><small>Interfaz oscura optimizada para bares, DJs y operación nocturna.</small></button>'+
+        '</div></div>'+
+      '<div class="lock-note">El tema solo cambia la apariencia. HOME / BAR PRO sigue controlando las funciones.</div>'+
+    '</div>');
+
+  gQr.insertAdjacentHTML("afterend",
+    '<div class="set-group" data-only="pro"><div class="set-title">VIDEOS DE MESA</div>'+
+      '<div class="set-row"><div class="grow"><b>Carpeta</b><small class="path">D:\\VIDEOS_MESA</small></div><button class="btn sm" data-pick>Cambiar</button></div>'+
+      '<div class="set-row"><div class="grow"><b>Cuándo insertarlos</b><small>Antes del karaoke pedido por QR</small></div>'+
+        '<select class="f" style="width:200px" id="setMesaMode">'+
+          '<option value="preguntar">Preguntar antes de insertar</option>'+
+          '<option value="auto" selected>Insertar automáticamente</option>'+
+          '<option value="nunca">Nunca insertar</option>'+
+        '</select></div>'+
+    '</div>');
+
+  gCdg.insertAdjacentHTML("afterend",
+    '<div class="set-group" data-only="pro"><div class="set-title">FONDOS CDG</div>'+
+      '<div class="set-row"><div class="grow"><b>Fondo actual</b><small id="setBgNow">—</small></div><button class="btn sm" id="setBgGo">Abrir fondos</button></div>'+
+      '<div class="set-row"><div class="grow"><b>Fondo automático por género</b><small>Salsa, cumbia o balada eligen su propio visual</small></div><div class="sw on brand" data-sw="bygenre"></div></div>'+
+    '</div>'+
+    '<div class="set-group" data-only="pro"><div class="set-title">OVERLAYS</div>'+
+      '<div class="set-row"><div class="grow"><b>Capas comerciales</b><small>Banner, QR, promoción, publicidad, cantante y mesa</small></div><button class="btn sm" id="setOvGo">Abrir overlays</button></div>'+
+      '<div class="set-row"><div class="grow"><b>Mostrar nombre del cantante al iniciar</b><small>Aparece 10 s al empezar cada karaoke</small></div><div class="sw on brand" data-sw="autosinger"></div></div>'+
+    '</div>'+
+    '<div class="set-group" data-only="pro"><div class="set-title">MODO NOCHE</div>'+
+      '<div class="set-row"><div class="grow"><b>Sesión de trabajo</b><small id="setNightState">Sin noche activa</small></div><button class="btn sm" id="setNightGo">Iniciar noche</button></div>'+
+    '</div>');
+
+  gTv.insertAdjacentHTML("afterend",
+    '<div class="set-group" data-only="home"><div class="set-title">AUDIO</div>'+
+      '<div class="set-row"><div class="grow"><b>Volumen general</b></div><input type="range" style="width:150px" value="90"></div>'+
+      '<div class="set-row"><div class="grow"><b>Eco de voz</b><small>Un poco de reverb para cantar</small></div><div class="sw on" data-sw="echo"></div></div>'+
+    '</div>'+
+    '<div class="set-group" data-only="home"><div class="set-title">CDG</div>'+
+      '<div class="set-row"><div class="grow"><b>Calidad</b><small>Ajuste simple, sin controles técnicos</small></div>'+
+        '<select class="f" style="width:150px" id="setCdgHome"><option value="rapida">Rápida</option><option value="alta" selected>Alta calidad</option></select></div>'+
+    '</div>'+
+    '<div class="set-group" data-only="home"><div class="set-title">APARIENCIA</div>'+
+      '<div class="set-row"><div class="grow"><b>Fondo de las letras</b><small id="setBgNowHome">—</small></div><button class="btn sm" id="setBgGoHome">Elegir fondo</button></div>'+
+    '</div>');
+
+  $(".drawer-body").insertAdjacentHTML("beforeend",
+    '<div class="set-group" data-only="home"><div class="set-title">FUNCIONES BAR / KARAOKE PRO</div>'+
+      ["Pedidos QR","Gestión de mesas","Videos de mesa","Fondos de video CDG","YouTube como fondo CDG",
+       "Playlist de fondos","Fondos automáticos por género","Modo Noche","Logs avanzados"]
+      .map(n=>'<div class="set-row locked"><div class="grow"><b>🔒 '+n+'</b></div></div>').join("")+
+      '<div class="lock-note">Disponible en KITKARAOKE BAR / KARAOKE PRO · <a href="#" id="lockCompare" style="color:var(--brand);font-weight:600">ver diferencias</a></div>'+
+    '</div>');
+
+  /* --- modales nuevos --- */
+  document.body.insertAdjacentHTML("beforeend",
+    '<div class="modal" id="mNight"><div class="modal-head"><b>🌙 Iniciar noche</b><div class="grow"></div>'+
+      '<button class="btn icon ghost" data-close>✕</button></div>'+
+      '<div class="modal-body">'+
+        '<label class="f">Nombre de la sesión</label><input class="f" id="nightName">'+
+        '<label class="f" style="margin-top:12px">Local</label><input class="f" id="nightPlace" value="Club Karaoke">'+
+        '<div class="grid2" style="margin-top:12px">'+
+          '<div><label class="f">Mesas activas</label><input class="f num" id="nightTables" value="20"></div>'+
+          '<div><label class="f">TV</label><input class="f" id="nightTv" value="TV SALA" readonly></div>'+
+        '</div>'+
+        '<div class="row" style="margin-top:14px"><div class="grow"><b style="font-size:12.5px">Pedidos QR</b></div><div class="sw on brand" data-sw="nightqr"></div></div>'+
+        '<div class="row"><div class="grow"><b style="font-size:12.5px">Videos de mesa</b></div><div class="sw on brand" data-sw="nightmesa"></div></div>'+
+      '</div>'+
+      '<div class="modal-foot"><button class="btn" data-close>Cancelar</button><button class="btn primary" id="nightStart">Iniciar noche</button></div>'+
+    '</div>'+
+    '<div class="modal" id="mNightEnd"><div class="modal-head"><b>Noche finalizada</b><div class="grow"></div>'+
+      '<button class="btn icon ghost" data-close>✕</button></div>'+
+      '<div class="modal-body" id="nightSummary"></div>'+
+      '<div class="modal-foot"><button class="btn" id="nightDetail">Ver resumen</button><button class="btn" id="nightExport">Exportar reporte</button><button class="btn primary" data-close>Cerrar</button></div>'+
+    '</div>'+
+    '<div class="modal wide" id="mCompare"><div class="modal-head"><b>HOME vs BAR / KARAOKE PRO</b><div class="grow"></div>'+
+      '<button class="btn icon ghost" data-close>✕</button></div>'+
+      '<div class="modal-body" id="compareBody"></div>'+
+      '<div class="modal-foot"><button class="btn" data-close>Cerrar</button><button class="btn primary" id="cmpToPro">Activar BAR PRO</button></div>'+
+    '</div>');
+}
+
+/* ---------------- FONDOS CDG ---------------- */
+const BG_SOURCES=[
+  {id:"fijo",     name:"Fondo fijo", pro:false},
+  {id:"imagen",   name:"Imagen",     pro:false},
+  {id:"animacion",name:"Animación",  pro:false},
+  {id:"video",    name:"Video local",pro:true},
+  {id:"youtube",  name:"YouTube",    pro:true},
+  {id:"playlist", name:"Playlist",   pro:true}
+];
+function setBg(patch,label){
+  Object.assign(S.bg,patch);
+  S.bgPv=null;
+  const live = S.playing && S.current && S.current.type==="CDG";
+  renderBg(); renderPreview(); renderTV(); share();
+  log("INFO","VIDEO","Fondo CDG · "+bgDesc());
+  toast(live ? "Fondo cambiado · el karaoke continúa" : (label||"Fondo aplicado"));
+}
+function previewBg(patch){
+  S.bgPv=Object.assign({},S.bg,patch);
+  renderPreview();
+  toast("Fondo en preview · la TV no cambia","info");
+}
+function applyGenreBg(it){
+  const g=genreOf(it), map=GENRE_BG[g];
+  if(!map || S.bg.genre===g && S.bg.video===map.video) { S.bg.genre=g; return; }
+  S.bg.genre=g; S.bg.source="video"; S.bg.video=map.video; S.bgPv=null;
+  renderBg(); renderPreview();
+  log("INFO","VIDEO","Género detectado: "+g.toUpperCase()+" · fondo "+map.video);
+  toast("🎨 Fondo "+g.toUpperCase()+" aplicado automáticamente");
+}
+function renderBg(){
+  const pro=S.mode==="pro", b=S.bg;
+  const src=$("#bgSources"); if(!src) return;
+  src.innerHTML=BG_SOURCES.map(o=>{
+    const locked=o.pro&&!pro;
+    return '<button class="chip'+(b.source===o.id?" on":"")+(locked?" locked":"")+'" data-bgsrc="'+o.id+'">'+(locked?"🔒 ":"")+o.name+'</button>';
+  }).join("");
+  $("#bgNow").textContent=bgDesc();
+  const sn=$("#setBgNow"); if(sn) sn.textContent=bgDesc();
+  const sh=$("#setBgNowHome"); if(sh) sh.textContent=bgDesc();
+
+  let h="";
+  if(b.source==="fijo"){
+    h='<div class="swatches" style="padding-bottom:22px">'+BG_COLORS.map(c=>
+      '<button class="swatch'+(b.color===c.id?" on":"")+'" data-bgcolor="'+c.id+'" style="background:'+c.css+'"><span>'+c.name+'</span></button>').join("")+'</div>';
+  }
+  if(b.source==="imagen"){
+    h='<div class="row" style="margin-bottom:10px"><span class="hint path">D:\\KITKARAOKE\\FONDOS\\IMAGENES</span><div class="grow"></div><button class="btn sm" data-pick>Cambiar carpeta</button></div>'+
+      BG_IMAGES.map(f=>'<div class="bgfile'+(b.image===f?" on":"")+'"><div class="film" style="background:'+tint(f)+'22">🖼️</div>'+
+      '<div><b>'+esc(f)+'</b><small>Imagen fija detrás de las letras</small></div>'+
+      '<button class="btn sm" data-bgimg="'+esc(f)+'">Usar</button></div>').join("");
+  }
+  if(b.source==="animacion"){
+    h=BG_ANIMS.map(a=>'<div class="bgfile'+(b.anim===a.id?" on":"")+'"><div class="film" style="background:'+tint(a.id)+'22">✨</div>'+
+      '<div><b>'+esc(a.name)+'</b><small>Animación ligera, funciona en equipos modestos</small></div>'+
+      '<button class="btn sm" data-bganim="'+a.id+'">Usar</button></div>').join("");
+  }
+  if(b.source==="video"){
+    h='<div class="row" style="margin-bottom:10px"><span class="hint path">D:\\KITKARAOKE\\FONDOS</span><div class="grow"></div><button class="btn sm" data-pick>Cambiar carpeta</button></div>'+
+      BG_VIDEOS.map(f=>'<div class="bgfile'+(b.video===f&&b.source==="video"?" on":"")+'"><div class="film" style="background:'+tint(f)+'33">🎞️</div>'+
+      '<div><b>'+esc(f)+'</b><small>Video en bucle detrás del CDG</small></div>'+
+      '<div class="row" style="gap:6px"><button class="btn sm" data-bgpv="'+esc(f)+'">Preview</button>'+
+      '<button class="btn sm primary" data-bgvid="'+esc(f)+'">Usar como fondo</button></div></div>').join("");
+  }
+  if(b.source==="youtube"){
+    h='<div class="row"><input class="f grow" id="bgYtQ" placeholder="Buscar visual en YouTube (luces, neón, playa…)"><button class="btn primary" id="bgYtGo">Buscar</button></div>'+
+      '<div id="bgYtOps" class="hint" style="margin-top:8px"></div>'+
+      '<div id="bgYtList" style="margin-top:10px"></div>'+
+      '<div class="panel" style="margin-top:14px;background:var(--cyan-soft);border-color:#c7e9f2">'+
+        '<div class="panel-body" style="padding:12px 14px">'+
+        '<b style="font-size:12.5px">El video se utiliza únicamente como fondo visual.</b>'+
+        '<div class="hint" style="margin-top:6px">AUDIO KARAOKE + LETRAS CDG + VIDEO YOUTUBE COMO FONDO · el audio nunca sale de YouTube.</div>'+
+        '</div></div>';
+  }
+  if(b.source==="playlist"){
+    h='<div id="bgPlaylist">'+b.playlist.map((f,i)=>
+        '<div class="bgfile" draggable="true" data-pl="'+i+'"><div class="film" style="background:'+tint(f)+'33">'+(i+1)+'</div>'+
+        '<div><b>'+esc(f)+'</b><small>Visual '+(i+1)+' de la rotación</small></div>'+
+        '<div class="row" style="gap:2px">'+
+          '<button class="mini" data-plup="'+i+'">▲</button>'+
+          '<button class="mini" data-pldown="'+i+'">▼</button>'+
+          '<button class="mini del" data-pldel="'+i+'">✕</button>'+
+        '</div></div>').join("")+'</div>'+
+      '<div class="row" style="margin-top:11px"><select class="f grow" id="plAdd">'+
+        BG_VIDEOS.map(f=>'<option>'+esc(f)+'</option>').join("")+'</select>'+
+        '<button class="btn" id="plAddBtn">Agregar</button></div>'+
+      '<div class="row" style="margin-top:12px"><div class="grow"><b style="font-size:12.5px">Cambio automático</b>'+
+        '<div class="hint">Rota los visuales sin que el DJ intervenga</div></div>'+
+        '<div class="sw'+(b.auto?" on":"")+' brand" data-sw="bgauto"></div></div>'+
+      '<div class="row"><label class="f grow" style="margin:0">Cada</label><select class="f" style="width:190px" id="plEvery">'+
+        '<option value="cancion">Cada canción</option><option value="2">Cada 2 canciones</option><option value="5min">Cada 5 minutos</option>'+
+      '</select></div>';
+  }
+  $("#bgBody").innerHTML=h;
+  const ev=$("#plEvery"); if(ev) ev.value=b.every;
+
+  /* fondos por género · solo BAR PRO */
+  $("#bgGenre").innerHTML = pro ? (
+    '<div class="panel" style="margin-top:14px"><div class="panel-head"><b>Fondos automáticos por género</b>'+
+    '<div class="grow"></div><span class="hint">Detectar género</span><div class="sw'+(b.byGenre?" on":"")+' brand" data-sw="bygenre2"></div></div>'+
+    '<div class="panel-body" style="padding-top:6px">'+
+      Object.keys(GENRE_BG).map(k=>'<div class="genre-row'+(b.genre===k?'':'')+'"><b>'+k.toUpperCase()+'</b>'+
+      '<span>'+GENRE_BG[k].playlist+'</span><span class="src">'+GENRE_BG[k].video+'</span></div>').join("")+
+    '</div></div>') : "";
+}
+
+/* ---------------- CAPAS DEL PREVIEW ---------------- */
+const LAYER_DEFS=[
+  {id:"fondo",  name:"Fondo",   desc:"Video, imagen o color"},
+  {id:"cdg",    name:"CDG",     desc:"Letras sincronizadas"},
+  {id:"overlay",name:"Overlay", desc:"Mensajes y promociones"},
+  {id:"logo",   name:"Logo",    desc:"Marca del local"}
+];
+function renderLayersBox(){
+  const box=$("#pvLayers"); if(!box) return;
+  box.classList.toggle("on", S.showLayers && S.mode==="pro");
+  if(!S.showLayers) return;
+  box.innerHTML=LAYER_DEFS.map((l,i)=>
+    '<div class="layer-row"><b>'+l.name+'</b><small>'+l.desc+'</small>'+
+    '<div class="sw'+(S.layers[l.id]?" on":"")+' brand" data-layer="'+l.id+'"></div></div>'+
+    (i<LAYER_DEFS.length-1?'<div class="layer-arrow">↓</div>':'<div class="layer-arrow">↓ TV</div>')
+  ).join("");
+}
+
+/* ---------------- MODO NOCHE ---------------- */
+function openNight(){
+  const d=new Date(), dias=["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+  const meses=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+  $("#nightName").value=dias[d.getDay()]+" "+d.getDate()+" "+meses[d.getMonth()];
+  $("#nightTables").value=S.cfg.tables;
+  $("#nightTv").value=S.tv.name+(S.tv.connected?" · conectada":" · sin conectar");
+  openModal("#mNight");
+}
+function startNight(){
+  const uniq=[];
+  S.hist.forEach(h=>{ if(uniq.indexOf(h.table)<0) uniq.push(h.table); });
+  S.night={active:true, name:$("#nightName").value||"Noche", place:$("#nightPlace").value||"",
+           songs:0, tables:uniq, started:Date.now()};
+  S.cfg.tables=Math.max(1,+$("#nightTables").value||20);
+  closeAll(); renderNight();
+  log("INFO","APP","Modo noche iniciado · "+S.night.name);
+  toast("Noche iniciada · "+S.night.name);
+}
+function renderNight(){
+  const on=S.night.active && S.mode==="pro";
+  $("#nightStrip").classList.toggle("on",on);
+  const st=$("#setNightState"), go=$("#setNightGo");
+  if(st) st.textContent = S.night.active ? "Activa · "+S.night.name : "Sin noche activa";
+  if(go) go.textContent = S.night.active ? "Cerrar noche" : "Iniciar noche";
+  $("#btnNight").textContent = S.night.active ? "🌙 Noche activa" : "🌙 Iniciar noche";
+  if(!on) return;
+  $("#nsName").textContent=S.night.name.toUpperCase();
+  $("#nsSongs").textContent=S.night.songs;
+  $("#nsReq").textContent=S.requests.length;
+  $("#nsTables").textContent=S.night.tables.length;
+  $("#nsWait").textContent=Math.max(1,Math.round(3+S.queue.length*1.4))+" min";
+  const nx=S.queue[0];
+  $("#nsNext").textContent = nx ? (nx.name? nx.name+" · Mesa "+nx.table : nx.artist+" — "+nx.title) : "—";
+}
+function nightStats(){
+  const min=Math.max(1,Math.round((Date.now()-S.night.started)/60000));
+  return {songs:S.night.songs, req:S.hist.length, tables:S.night.tables.length,
+          wait:Math.max(1,Math.round(3+S.queue.length*1.4)),
+          dur:Math.floor(min/60)+" h "+String(min%60).padStart(2,"0")+" min"};
+}
+function endNight(silent){
+  if(!S.night.active) return;
+  const st=nightStats(), name=S.night.name;
+  S.night.active=false; renderNight();
+  log("INFO","APP","Noche cerrada · "+name);
+  if(silent) return;
+  $("#nightSummary").innerHTML=
+    '<div style="font-size:13.5px;font-weight:700">'+esc(name)+'</div>'+
+    '<div class="hint" style="margin-bottom:14px">'+esc(S.night.place)+'</div>'+
+    '<div class="grid2">'+
+      '<div class="spec"><dt>Canciones reproducidas</dt><dd class="num">'+st.songs+'</dd></div>'+
+      '<div class="spec"><dt>Pedidos QR</dt><dd class="num">'+st.req+'</dd></div>'+
+      '<div class="spec"><dt>Mesas participantes</dt><dd class="num">'+st.tables+'</dd></div>'+
+      '<div class="spec"><dt>Espera promedio</dt><dd class="num">'+st.wait+' min</dd></div>'+
+      '<div class="spec"><dt>Duración</dt><dd class="num">'+st.dur+'</dd></div>'+
+      '<div class="spec"><dt>En cola al cerrar</dt><dd class="num">'+S.queue.length+'</dd></div>'+
+    '</div><div id="nightDetailBox"></div>';
+  openModal("#mNightEnd");
+}
+
+/* ---------------- COMPARATIVA DE MODOS ---------------- */
+const CMP=[
+  ["Reproducir MP4 karaoke","Archivos de video con la letra incrustada.","yes","yes"],
+  ["Reproducir CDG","El formato clásico de karaoke, letras sincronizadas.","yes","yes"],
+  ["Fondo fijo para CDG","Negro, un color o un degradado detrás de las letras.","yes","yes"],
+  ["Imagen personalizada","Tu foto o tu logo como fondo del CDG.","yes","yes"],
+  ["Fondos animados básicos","Partículas, ondas o luces suaves.","basic","yes"],
+  ["Video de fondo CDG","Reproduce visuales en bucle detrás de las letras CDG.","no","yes"],
+  ["YouTube como fondo CDG","Un video de YouTube solo como imagen de fondo.","no","yes"],
+  ["Cambio de fondo","Cambiar el visual sin cortar la canción que está sonando.","no","yes"],
+  ["Playlist de fondos","Una lista de visuales que rota sola durante la noche.","no","yes"],
+  ["Fondos por género","Salsa, cumbia o balada eligen su propio fondo.","no","yes"],
+  ["Pedidos QR","Las mesas piden su canción desde el celular.","no","yes"],
+  ["Mesas","Cada pedido queda asociado a su mesa y su nombre.","no","yes"],
+  ["Videos de mesa","Cortina con el número de mesa antes del karaoke.","no","yes"],
+  ["Preview DJ","Revisar material sin tocar lo que ve el público.","basic","yes"],
+  ["Overlays","Capas sobre la TV: logo, mensajes, promociones, QR.","basic","yes"],
+  ["Logs avanzados","Diagnóstico técnico de motores, TV, red, video y servicios.","no","yes"],
+  ["Modo Noche","Resumen de la jornada y cierre con reporte.","no","yes"]
+];
+const cell=v=> v==="yes" ? '<span class="yes">✓</span>' : v==="no" ? '<span class="no">—</span>' : '<span class="basic">BÁSICO</span>';
+function openCompare(){
+  $("#compareBody").innerHTML='<div class="cmp-wrap"><table class="cmp"><thead><tr>'+
+    '<th>Función</th><th class="c">🏠 HOME</th><th class="c">🍸 BAR PRO</th></tr></thead><tbody>'+
+    CMP.map(r=>'<tr><td><b>'+esc(r[0])+'</b><small>'+esc(r[1])+'</small></td>'+
+    '<td class="c">'+cell(r[2])+'</td><td class="c">'+cell(r[3])+'</td></tr>').join("")+
+    '</tbody></table></div>';
+  openModal("#mCompare");
+}
+
+/* ---------------- EVENTOS FASE 2 ---------------- */
+function bindPhase2(){
+  /* tema LIGHT / NIGHT */
+  $("#btnTheme").addEventListener("click",toggleTheme);
+  $$("#setTheme button").forEach(b=>b.addEventListener("click",()=>setTheme(b.dataset.theme)));
+  updateThemeUI();
+
+  /* menú de demos */
+  $("#btnDemos").addEventListener("click",e=>{ e.stopPropagation(); $("#demoMenu").classList.toggle("on"); });
+  document.addEventListener("click",()=>$("#demoMenu").classList.remove("on"));
+  $("#demoMenu").addEventListener("click",()=>$("#demoMenu").classList.remove("on"));
+
+  /* comparativa */
+  $("#btnCompare").addEventListener("click",openCompare);
+  $("#lockCompare").addEventListener("click",e=>{ e.preventDefault(); openCompare(); });
+  $("#cmpToPro").addEventListener("click",()=>{ closeAll(); setMode("pro"); });
+
+  /* modo noche */
+  $("#btnNight").addEventListener("click",()=>{ if(S.night.active) endNight(); else openNight(); });
+  $("#setNightGo").addEventListener("click",()=>{ closeAll(); if(S.night.active) endNight(); else openNight(); });
+  $("#btnNightEnd").addEventListener("click",()=>endNight());
+  $("#nightStart").addEventListener("click",startNight);
+  $("#nightExport").addEventListener("click",()=>{
+    const st=nightStats();
+    download("kitkaraoke-noche.txt",
+      "KITKARAOKE EVENT · RESUMEN DE NOCHE\n"+S.night.name+" · "+S.night.place+"\n\n"+
+      "Canciones reproducidas: "+st.songs+"\nPedidos QR: "+st.req+"\nMesas participantes: "+st.tables+
+      "\nEspera promedio: "+st.wait+" min\nDuración: "+st.dur+"\n");
+    toast("Reporte exportado");
+  });
+  $("#nightDetail").addEventListener("click",()=>{
+    $("#nightDetailBox").innerHTML='<div class="q-sub">DETALLE DE PEDIDOS</div>'+
+      S.hist.slice(-8).reverse().map(h=>'<div class="logrow" style="grid-template-columns:60px 1fr 90px"><span class="t">'+esc(h.ago)+
+      '</span><span class="logmsg">'+esc(h.name)+' · Mesa '+h.table+' · '+esc(h.song)+'</span><span class="cat">'+esc(h.state)+'</span></div>').join("");
+  });
+
+  /* fondos CDG */
+  $("#bgSources").addEventListener("click",e=>{
+    const c=e.target.closest("[data-bgsrc]"); if(!c) return;
+    const src=BG_SOURCES.find(x=>x.id===c.dataset.bgsrc);
+    if(src.pro && !proGate(src.name+" como fondo CDG")) return;
+    S.bg.source=src.id; S.bgPv=null; renderBg(); renderPreview(); renderTV(); share();
+    log("INFO","VIDEO","Fuente de fondo CDG · "+src.name);
+  });
+  $("#bgBody").addEventListener("click",e=>{
+    const t=e.target;
+    const col=t.closest("[data-bgcolor]"); if(col) return setBg({color:col.dataset.bgcolor,source:"fijo"});
+    const img=t.closest("[data-bgimg]"); if(img) return setBg({image:img.dataset.bgimg,source:"imagen"});
+    const an =t.closest("[data-bganim]"); if(an)  return setBg({anim:an.dataset.bganim,source:"animacion"});
+    const pv =t.closest("[data-bgpv]");  if(pv)   return previewBg({source:"video",video:pv.dataset.bgpv});
+    const vid=t.closest("[data-bgvid]"); if(vid)  return setBg({video:vid.dataset.bgvid,source:"video"});
+    const up =t.closest("[data-plup]");  if(up)   return movePl(+up.dataset.plup,-1);
+    const dn =t.closest("[data-pldown]");if(dn)   return movePl(+dn.dataset.pldown,1);
+    const del=t.closest("[data-pldel]"); if(del){ S.bg.playlist.splice(+del.dataset.pldel,1); renderBg(); renderPreview(); return; }
+    if(t.closest("#plAddBtn")){ S.bg.playlist.push($("#plAdd").value); renderBg(); toast("Visual agregado a la playlist"); return; }
+    if(t.closest("#bgYtGo")){ bgYtSearch($("#bgYtQ").value.trim()||"luces"); return; }
+    const yt=t.closest("[data-bgyt]");
+    if(yt){
+      const title=yt.dataset.bgyt;
+      $("#bgYtOps").textContent="Resolviendo video…";
+      setTimeout(()=>{ $("#bgYtOps").textContent="Preparando fondo…";
+        setTimeout(()=>{ $("#bgYtOps").textContent="Fondo listo · solo imagen, sin audio";
+          log("INFO","RESOLVER","Fondo YouTube resuelto (simulado)");
+          setBg({source:"youtube",yt:title});
+        },700);
+      },700);
+    }
+  });
+  $("#bgBody").addEventListener("change",e=>{ if(e.target.id==="plEvery"){ S.bg.every=e.target.value; toast("Rotación: "+e.target.selectedOptions[0].text,"info"); } });
+
+  /* cambio de fondo en vivo */
+  $("#nowBg").addEventListener("click",e=>{
+    const b=e.target.closest("[data-qbg]"); if(!b) return;
+    if(!proGate("Cambiar el fondo en vivo")) return;
+    const k=b.dataset.qbg;
+    if(k==="v1")  setBg({source:"video",video:BG_VIDEOS[1]});
+    if(k==="v2")  setBg({source:"video",video:BG_VIDEOS[2]});
+    if(k==="img") setBg({source:"imagen",image:BG_IMAGES[1]});
+    if(k==="yt")  setBg({source:"youtube",yt:BG_YT[0].title});
+  });
+
+  /* capas del preview */
+  $("#pvLayersBtn").addEventListener("click",()=>{
+    if(!proGate("La composición por capas")) return;
+    S.showLayers=!S.showLayers;
+    $("#pvLayersBtn").textContent=S.showLayers?"Ocultar capas":"Ver capas";
+    renderLayersBox();
+  });
+  $("#pvLayers").addEventListener("click",e=>{
+    const sw=e.target.closest("[data-layer]"); if(!sw) return;
+    const id=sw.dataset.layer;
+    S.layers[id]=!S.layers[id];
+    renderLayersBox(); renderPreview();
+    log("INFO","OVERLAY","Capa "+id+" en preview · "+(S.layers[id]?"ON":"OFF"));
+  });
+
+  /* ajustes nuevos */
+  $("#setMesaMode").addEventListener("change",e=>{ S.cfg.mesaMode=e.target.value; log("INFO","APP","Videos de mesa · "+e.target.value); });
+  $("#setBgGo").addEventListener("click",()=>{ closeAll(); setSec("overlays"); });
+  $("#setBgGoHome").addEventListener("click",()=>{ closeAll(); setSec("overlays"); });
+  $("#setOvGo").addEventListener("click",()=>{ closeAll(); setSec("overlays"); });
+}
+function movePl(i,d){
+  const j=i+d, pl=S.bg.playlist;
+  if(j<0||j>=pl.length) return;
+  const t=pl[i]; pl[i]=pl[j]; pl[j]=t;
+  renderBg(); renderPreview();
+}
+function bgYtSearch(q){
+  $("#bgYtOps").textContent="Buscando visuales para “"+q+"”…";
+  log("INFO","SEARCH","Búsqueda de fondo YouTube simulada · "+q);
+  setTimeout(()=>{
+    $("#bgYtOps").textContent=BG_YT.length+" resultados · el audio sigue saliendo del karaoke";
+    $("#bgYtList").innerHTML=BG_YT.map(v=>
+      '<div class="bgfile"><div class="film" style="background:'+tint(v.title)+'33">▶</div>'+
+      '<div><b>'+esc(v.title)+'</b><small>'+esc(v.ch)+' · '+mmss(v.dur)+'</small></div>'+
+      '<button class="btn sm primary" data-bgyt="'+esc(v.title)+'">Usar como fondo</button></div>').join("");
+  },700);
+}
+
+/* ================================================================
+   ARRANQUE
+   ================================================================ */
+function seed(){
+  /* cola inicial mezclando orígenes */
+  [
+    [CATALOG[2],  {kind:"qr",   source:"Mesa 12 · Andrea"}],
+    [CATALOG[0],  {kind:"yt",   source:"YouTube"}],
+    [CATALOG[8],  {kind:"karaoke",source:"Local"}],
+    [{artist:"Video de mesa",title:"Mesa 7 · Cumpleaños",dur:24,type:"VIDEO",source:"D:\\VIDEOS_MESA"},{kind:"mesa"}],
+    [CATALOG[5],  {kind:"karaoke",source:"Local"}],
+    [CATALOG[11], {kind:"qr",   source:"Mesa 4 · Carlos"}],
+    [CATALOG[15], {kind:"karaoke",source:"Local"}],
+    [CATALOG[3],  {kind:"karaoke",source:"Local"}]
+  ].forEach(([it,ex])=>S.queue.push(qItem(it,ex)));
+
+  /* pedidos pendientes */
+  newRequest(4,"Carlos",CATALOG.find(x=>x.title==="El Cervecero"));
+  newRequest(7,"Valeria",CATALOG.find(x=>x.title==="Provenza"));
+  newRequest(12,"Andrea",CATALOG.find(x=>x.title==="Motor y Motivo"));
+  S.requests.forEach((r,i)=>r.ts=Date.now()-[15,43,68][i]*1000);
+  $("#toasts").innerHTML="";
+}
+function init(){
+  buildPhase2DOM();
+  setTheme(document.documentElement.getAttribute("data-theme")||"light",false);
+  bindPhase2();
+  seed();
+  renderResults(); renderYT(); renderQueue(); renderNow(); renderPreview();
+  renderOverlays(); renderRequests(); renderLogs(); renderPhone(); renderTV();
+  renderBg(); renderLayersBox(); renderNight();
+  setMode("pro");
+  $("#toasts").innerHTML="";
+  $("#codeBox").innerHTML=S.tv.code.split("").map(d=>"<span>"+d+"</span>").join("");
+  setInterval(()=>{ if(S.sec==="qr"&&S.requests.length) renderRequests(); },15000);
+
+  const params=new URLSearchParams(location.search);
+  if(params.get("view")==="tv"){
+    setView("tv");
+    try{ applyShared(JSON.parse(localStorage.getItem("kk_state"))); }catch(e){}
+  }
+  log("INFO","APP","Interfaz lista · esperando vinculación de TV");
+}
+init();
+
+})();
+</script>
+</body>
+</html>
