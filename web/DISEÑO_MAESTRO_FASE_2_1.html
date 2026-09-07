@@ -43,6 +43,7 @@
   --rail:74px;
   --queue:334px;
   --preview:372px;
+  --splitter:7px;
   --font:"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
   --strong-bg:#14161b;--strong-fg:#ffffff;--toast-bg:#14161b;--toast-fg:#ffffff;
 }
@@ -143,8 +144,38 @@ button{cursor:pointer;border:0;background:none}
 .btn.sm svg,.btn.xs svg{width:13px;height:13px}
 
 /* ---------- SHELL ---------- */
-.shell{flex:1;display:grid;grid-template-columns:var(--rail) minmax(0,1fr) var(--queue);min-height:0}
-.shell.with-preview{grid-template-columns:var(--rail) minmax(0,1fr) var(--preview) var(--queue)}
+.shell{flex:1;display:grid;grid-template-columns:var(--rail) minmax(280px,1fr) var(--splitter) var(--queue);min-height:0}
+.shell.with-preview{grid-template-columns:var(--rail) minmax(280px,1fr) var(--splitter) var(--preview) var(--splitter) var(--queue)}
+.panel-splitter{
+  position:relative;z-index:12;min-width:var(--splitter);background:var(--surface);cursor:col-resize;
+  touch-action:none;user-select:none;border:0;outline:0;
+}
+.panel-splitter::before{
+  content:"";position:absolute;left:50%;top:0;bottom:0;width:1px;transform:translateX(-50%);
+  background:var(--line);transition:width .12s,background .12s,box-shadow .12s;
+}
+.panel-splitter:hover::before,.panel-splitter.dragging::before,.panel-splitter:focus-visible::before{
+  width:3px;background:var(--cyan);box-shadow:0 0 0 2px rgba(10,155,189,.12);
+}
+.panel-splitter.dragging{cursor:col-resize}
+body.resizing-panels{cursor:col-resize!important;user-select:none!important}
+body.resizing-panels *{cursor:col-resize!important;user-select:none!important}
+#splitWorkPreview{display:none}
+.shell.with-preview #splitWorkPreview{display:block}
+.preview-toggle{
+  margin-left:auto;width:28px;height:28px;border-radius:8px;display:grid;place-items:center;
+  color:var(--ink-3);border:1px solid transparent;
+}
+.preview-toggle:hover{color:var(--ink);background:var(--surface-3);border-color:var(--line)}
+.preview-restore{
+  display:none;position:absolute;z-index:14;left:50%;top:14px;transform:translateX(-50%);
+  width:25px;height:30px;border-radius:8px;background:var(--surface);border:1px solid var(--line-2);
+  box-shadow:var(--sh-2);color:var(--cyan);font-size:15px;place-items:center;cursor:pointer;
+}
+.preview-restore:hover{background:var(--cyan-soft);border-color:#9edbe8}
+.shell.preview-collapsed.with-preview{grid-template-columns:var(--rail) minmax(280px,1fr) var(--splitter) var(--queue)}
+.shell.preview-collapsed.with-preview #splitWorkPreview,.shell.preview-collapsed.with-preview .previewcol{display:none}
+.shell.preview-collapsed.with-preview .preview-restore{display:grid}
 
 /* ---------- RAIL ---------- */
 .rail{
@@ -625,6 +656,7 @@ input.f:focus,select.f:focus{outline:none;border-color:var(--cyan);background:#f
   .shell,.shell.with-preview{grid-template-columns:var(--rail) minmax(0,1fr)}
   .previewcol{display:none}
   .queuecol{display:none}
+  .panel-splitter{display:none!important}
   .shell.mobile-queue .queuecol{display:flex;position:fixed;right:0;top:96px;bottom:68px;width:320px;z-index:40;box-shadow:var(--sh-3)}
 }
 @media (max-width:720px){
@@ -1143,12 +1175,15 @@ html.theme-transition .chip,html.theme-transition .res,html.theme-transition .qi
 
     </div><!-- /work -->
 
+    <div class="panel-splitter" id="splitWorkPreview" role="separator" aria-orientation="vertical" aria-label="Redimensionar Área de trabajo y Preview" tabindex="0" title="Arrastra para redimensionar · doble clic para restaurar"></div>
+
     <!-- PREVIEW PRIVADO -->
     <aside class="previewcol" id="previewCol">
       <div class="pv-head">
         <div class="pv-tagline">
           <span class="eye"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="2.6"/></svg></span>
           <b>Preview privado</b>
+          <button class="preview-toggle" id="btnHidePreview" title="Ocultar Preview" aria-label="Ocultar Preview">›</button>
         </div>
         <div class="pv-note">Solo tú estás viendo esto · la TV no cambia</div>
         <div class="row" style="margin-top:10px" id="pvLayersRow">
@@ -1190,6 +1225,10 @@ html.theme-transition .chip,html.theme-transition .res,html.theme-transition .qi
         <button class="btn primary wide" id="pvToTv">Enviar a TV</button>
       </div>
     </aside>
+
+    <div class="panel-splitter" id="splitPreviewQueue" role="separator" aria-orientation="vertical" aria-label="Redimensionar Preview y Cola" tabindex="0" title="Arrastra para redimensionar · doble clic para restaurar">
+      <button class="preview-restore" id="btnShowPreview" title="Mostrar Preview" aria-label="Mostrar Preview">‹</button>
+    </div>
 
     <!-- COLA ÚNICA -->
     <aside class="queuecol">
@@ -1666,9 +1705,82 @@ function setSec(s){
   $$(".sec").forEach(x=>x.classList.toggle("on", x.dataset.sec===s));
   $$(".rail-item[data-sec]").forEach(b=>b.classList.toggle("on", b.dataset.sec===s));
   $("#shell").classList.toggle("with-preview", s==="karaokes"||s==="youtube"||s==="qr");
+  applyPanelLayout();
   if(s==="logs") renderLogs();
   if(s==="qr") renderRequests();
   if(s==="overlays") renderOverlays();
+}
+
+/* ---------------- PANELES REDIMENSIONABLES ---------------- */
+const PANEL_LAYOUT_KEY="kitkaraoke_panel_layout_v1";
+const PANEL_DEFAULTS={preview:372,queue:334,previewHidden:false};
+let panelLayout=Object.assign({},PANEL_DEFAULTS);
+
+function clampPanel(value,min,max){ return Math.min(max,Math.max(min,value)); }
+function panelLimits(){
+  const shell=$("#shell"), available=shell ? shell.clientWidth-74-14 : window.innerWidth-88;
+  return {
+    previewMax:Math.max(280,Math.min(720,available-280-280)),
+    queueMax:Math.max(280,Math.min(620,available-280-280))
+  };
+}
+function savePanelLayout(){
+  try{ localStorage.setItem(PANEL_LAYOUT_KEY,JSON.stringify(panelLayout)); }catch(e){}
+}
+function applyPanelLayout(){
+  const shell=$("#shell"); if(!shell) return;
+  const lim=panelLimits();
+  panelLayout.preview=clampPanel(Number(panelLayout.preview)||PANEL_DEFAULTS.preview,280,lim.previewMax);
+  panelLayout.queue=clampPanel(Number(panelLayout.queue)||PANEL_DEFAULTS.queue,280,lim.queueMax);
+  document.documentElement.style.setProperty("--preview",panelLayout.preview+"px");
+  document.documentElement.style.setProperty("--queue",panelLayout.queue+"px");
+  shell.classList.toggle("preview-collapsed",!!panelLayout.previewHidden);
+  const expanded=String(!panelLayout.previewHidden);
+  const hide=$("#btnHidePreview"),show=$("#btnShowPreview");
+  if(hide) hide.setAttribute("aria-expanded",expanded);
+  if(show) show.setAttribute("aria-expanded",expanded);
+}
+function loadPanelLayout(){
+  try{ panelLayout=Object.assign({},PANEL_DEFAULTS,JSON.parse(localStorage.getItem(PANEL_LAYOUT_KEY)||"{}")); }catch(e){ panelLayout=Object.assign({},PANEL_DEFAULTS); }
+  applyPanelLayout();
+}
+function setPreviewHidden(hidden){
+  panelLayout.previewHidden=!!hidden;applyPanelLayout();savePanelLayout();
+  toast(hidden?"Preview oculto":"Preview visible","info");
+}
+function resetPanelSize(kind){
+  panelLayout[kind]=PANEL_DEFAULTS[kind];applyPanelLayout();savePanelLayout();
+  toast(kind==="preview"?"Ancho del Preview restaurado":"Ancho de la Cola restaurado","info");
+}
+function bindPanelSplitter(el,kind){
+  if(!el) return;
+  el.addEventListener("pointerdown",e=>{
+    if(e.target.closest("button")||window.innerWidth<=1080) return;
+    e.preventDefault();el.setPointerCapture(e.pointerId);el.classList.add("dragging");document.body.classList.add("resizing-panels");
+    const startX=e.clientX,startValue=panelLayout[kind];
+    const move=ev=>{
+      const dx=ev.clientX-startX,lim=panelLimits(),max=kind==="preview"?lim.previewMax:lim.queueMax;
+      panelLayout[kind]=clampPanel(startValue-dx,280,max);applyPanelLayout();
+    };
+    const end=()=>{ el.classList.remove("dragging");document.body.classList.remove("resizing-panels");savePanelLayout();el.removeEventListener("pointermove",move);el.removeEventListener("pointerup",end);el.removeEventListener("pointercancel",end); };
+    el.addEventListener("pointermove",move);el.addEventListener("pointerup",end);el.addEventListener("pointercancel",end);
+  });
+  el.addEventListener("dblclick",e=>{ if(!e.target.closest("button")) resetPanelSize(kind); });
+  el.addEventListener("keydown",e=>{
+    if(e.key!=="ArrowLeft"&&e.key!=="ArrowRight"&&e.key!=="Home") return;
+    e.preventDefault();
+    if(e.key==="Home") return resetPanelSize(kind);
+    const step=e.shiftKey?40:10,dir=e.key==="ArrowLeft"?1:-1,lim=panelLimits(),max=kind==="preview"?lim.previewMax:lim.queueMax;
+    panelLayout[kind]=clampPanel(panelLayout[kind]+dir*step,280,max);applyPanelLayout();savePanelLayout();
+  });
+}
+function bindPanelLayout(){
+  loadPanelLayout();
+  bindPanelSplitter($("#splitWorkPreview"),"preview");
+  bindPanelSplitter($("#splitPreviewQueue"),"queue");
+  $("#btnHidePreview").addEventListener("click",()=>setPreviewHidden(true));
+  $("#btnShowPreview").addEventListener("click",e=>{e.stopPropagation();setPreviewHidden(false)});
+  window.addEventListener("resize",applyPanelLayout);
 }
 
 /* ================================================================
@@ -3286,6 +3398,7 @@ function seed(){
 }
 function init(){
   buildPhase2DOM();
+  bindPanelLayout();
   setTheme(document.documentElement.getAttribute("data-theme")||"light",false);
   bindPhase2();
   seed();
