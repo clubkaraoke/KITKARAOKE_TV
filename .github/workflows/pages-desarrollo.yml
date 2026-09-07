@@ -1,0 +1,35 @@
+name: Preview KITKARAOKE TV
+
+on:
+  push:
+    branches:
+      - desarrollo
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: kitkaraoke-tv-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Descargar desarrollo
+        uses: actions/checkout@v4
+      - name: Configurar Pages
+        uses: actions/configure-pages@v5
+      - name: Subir sitio
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - name: Publicar preview
+        id: deployment
+        uses: actions/deploy-pages@v4
