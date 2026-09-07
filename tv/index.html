@@ -1,1 +1,22 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>KITKARAOKE TV Receiver</title><link rel="stylesheet" href="../assets/app.css"><script src="../assets/config.js"></script><script src="../assets/pairing.js"></script></head><body><main class="tv-stage"><div class="tv-logo">KITKARAOKE TV</div><section class="tv-card"><div id="waiting"><div class="tv-small">CÓDIGO DE CONEXIÓN</div><div id="code" class="tv-code">····</div><div class="tv-small">Abre el control DJ y escribe este código.</div></div><div id="paired" class="hidden"><div style="font-size:72px">✓</div><h1 style="font-size:46px;margin:12px 0">TV VINCULADA</h1><div id="pairedName" class="tv-small">Esperando contenido...</div></div></section><div class="tv-foot"><span id="mode">PREVIEW</span> · receptor KITKARAOKE</div></main><script>(async()=>{const c=document.getElementById("code");try{const s=await KIT_PAIR.createReceiver();c.textContent=s.code;document.getElementById("mode").textContent=(s.mode||"preview").toUpperCase();KIT_PAIR.on((type,data)=>{if(type==="paired"){document.getElementById("waiting").classList.add("hidden");document.getElementById("paired").classList.remove("hidden");document.getElementById("pairedName").textContent=(data.name||"TV")+" · Esperando contenido...";}})}catch(e){c.textContent="ERROR";}})();</script></body></html>
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>KITKARAOKE TV</title><link rel="stylesheet" href="../assets/app.css"><script src="../assets/config.js"></script><script src="../assets/pairing.js"></script></head><body><main class="tv-stage"><div class="tv-logo">KITKARAOKE TV</div><section class="tv-card"><div id="waiting"><div class="tv-small">CÓDIGO DE CONEXIÓN</div><div id="code" class="tv-code">····</div><div id="expires" class="tv-small">Generando código seguro...</div><div id="net" class="tv-small" style="margin-top:14px">Conectando...</div></div><div id="paired" class="hidden"><div style="font-size:72px">✓</div><h1 style="font-size:46px;margin:12px 0">TV VINCULADA</h1><div id="pairedName" class="tv-small">Esperando contenido...</div></div><div id="err" class="hidden"><h1>NO SE PUDO CONECTAR</h1><div class="tv-small">Recarga la página para generar un código nuevo.</div></div></section><div class="tv-foot">TV1 · KITKARAOKE RECEIVER</div></main><script>
+(async()=>{
+ const code=document.getElementById("code"), exp=document.getElementById("expires"), net=document.getElementById("net");
+ try{
+   const s=await KIT_PAIR.createReceiver();
+   code.textContent=s.code;
+   const tick=()=>{const sec=Math.max(0,Math.ceil((s.expiresAt-Date.now())/1000));exp.textContent=sec?"Código válido por "+sec+" s":"Código vencido · recarga para generar otro";};
+   tick(); setInterval(tick,1000);
+   KIT_PAIR.on((type,data)=>{
+     if(type==="ws"){net.textContent=data.status==="connected"?"Servidor conectado ✓":data.status==="error"?"Error de conexión":"Reconectando...";}
+     if(type==="paired"){
+       document.getElementById("waiting").classList.add("hidden");
+       document.getElementById("paired").classList.remove("hidden");
+       document.getElementById("pairedName").textContent=(data.name||"TV")+" · Esperando contenido...";
+     }
+   });
+ }catch(e){
+   document.getElementById("waiting").classList.add("hidden");
+   document.getElementById("err").classList.remove("hidden");
+ }
+})();
+</script></body></html>
