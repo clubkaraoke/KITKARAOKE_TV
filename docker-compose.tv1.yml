@@ -7,8 +7,11 @@ services:
       REDIS_URL: redis://redis:6379/0
       PAIR_TTL_SECONDS: "300"
       RECEIVER_TTL_SECONDS: "86400"
-      APP_VERSION: "tv1-dev"
+      APP_VERSION: "tv1-webrtc-1"
       LOG_LEVEL: INFO
+      TURN_SECRET: ${TURN_SECRET}
+      TURN_HOST: tv1.kitkaraoke.com
+      TURN_TTL_SECONDS: "3600"
     ports:
       - "127.0.0.1:8791:8000"
     depends_on:
@@ -33,6 +36,25 @@ services:
       interval: 10s
       timeout: 3s
       retries: 5
+
+  coturn:
+    image: coturn/coturn:4.6.3
+    container_name: kitkaraoke-tv1-turn
+    restart: unless-stopped
+    network_mode: host
+    command:
+      - -n
+      - --log-file=stdout
+      - --listening-port=3478
+      - --min-port=49160
+      - --max-port=49200
+      - --fingerprint
+      - --use-auth-secret
+      - --static-auth-secret=${TURN_SECRET}
+      - --realm=tv1.kitkaraoke.com
+      - --no-cli
+      - --no-tls
+      - --no-dtls
 
 volumes:
   kitkaraoke_tv1_redis:

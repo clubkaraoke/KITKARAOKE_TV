@@ -1,22 +1,211 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>KITKARAOKE TV</title><link rel="stylesheet" href="../assets/app.css"><script src="../assets/config.js"></script><script src="../assets/pairing.js"></script></head><body><main class="tv-stage"><div class="tv-logo">KITKARAOKE TV</div><section class="tv-card"><div id="waiting"><div class="tv-small">CÓDIGO DE CONEXIÓN</div><div id="code" class="tv-code">····</div><div id="expires" class="tv-small">Generando código seguro...</div><div id="net" class="tv-small" style="margin-top:14px">Conectando...</div></div><div id="paired" class="hidden"><div style="font-size:72px">✓</div><h1 style="font-size:46px;margin:12px 0">TV VINCULADA</h1><div id="pairedName" class="tv-small">Esperando contenido...</div></div><div id="err" class="hidden"><h1>NO SE PUDO CONECTAR</h1><div class="tv-small">Recarga la página para generar un código nuevo.</div></div></section><div class="tv-foot">TV1 · KITKARAOKE RECEIVER</div></main><script>
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KITKARAOKE TV</title>
+<link rel="stylesheet" href="../assets/app.css">
+<script src="../assets/config.js"></script>
+<script src="../assets/pairing.js"></script>
+<style>
+html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}
+#remoteStage{position:fixed;inset:0;background:#000;display:none;z-index:1}
+#remoteVideo{width:100%;height:100%;object-fit:contain;background:#000}
+#mediaHud{position:fixed;left:28px;right:28px;bottom:24px;display:none;z-index:4;
+  font:600 16px/1.35 system-ui,sans-serif;color:#fff;text-shadow:0 2px 8px #000}
+#mediaHud b{font-size:20px}
+#audioGate{position:fixed;inset:0;display:none;place-items:center;background:rgba(0,0,0,.72);z-index:8}
+#audioGate button{font:700 22px system-ui;padding:18px 28px;border:0;border-radius:14px;background:#ec008c;color:#fff}
+#transportState{position:fixed;right:22px;top:20px;z-index:5;font:600 13px system-ui;color:#d7dbe4;
+  background:rgba(16,20,28,.72);padding:8px 11px;border-radius:999px}
+</style>
+</head>
+<body>
+<main class="tv-stage" id="pairStage">
+  <div class="tv-logo">KITKARAOKE TV</div>
+  <section class="tv-card">
+    <div id="waiting">
+      <div class="tv-small">CÓDIGO DE CONEXIÓN</div>
+      <div id="code" class="tv-code">····</div>
+      <div id="expires" class="tv-small">Generando código seguro...</div>
+      <div id="net" class="tv-small" style="margin-top:14px">Conectando...</div>
+    </div>
+    <div id="paired" class="hidden">
+      <div style="font-size:72px">✓</div>
+      <h1 style="font-size:46px;margin:12px 0">TV VINCULADA</h1>
+      <div id="pairedName" class="tv-small">Esperando contenido...</div>
+    </div>
+    <div id="err" class="hidden">
+      <h1>NO SE PUDO CONECTAR</h1>
+      <div class="tv-small">Recarga la página para generar un código nuevo.</div>
+    </div>
+  </section>
+  <div class="tv-foot">TV1 · KITKARAOKE RECEIVER</div>
+</main>
+
+<div id="remoteStage">
+  <video id="remoteVideo" autoplay playsinline></video>
+  <div id="mediaHud"><b id="mediaTitle"></b><div id="mediaArtist"></div></div>
+</div>
+<div id="transportState">TV · esperando transporte</div>
+<div id="audioGate"><button id="audioGateBtn">ACTIVAR AUDIO / VIDEO</button></div>
+
+<script>
 (async()=>{
- const code=document.getElementById("code"), exp=document.getElementById("expires"), net=document.getElementById("net");
- try{
-   const s=await KIT_PAIR.createReceiver();
-   code.textContent=s.code;
-   const tick=()=>{const sec=Math.max(0,Math.ceil((s.expiresAt-Date.now())/1000));exp.textContent=sec?"Código válido por "+sec+" s":"Código vencido · recarga para generar otro";};
-   tick(); setInterval(tick,1000);
-   KIT_PAIR.on((type,data)=>{
-     if(type==="ws"){net.textContent=data.status==="connected"?"Servidor conectado ✓":data.status==="error"?"Error de conexión":"Reconectando...";}
-     if(type==="paired"){
-       document.getElementById("waiting").classList.add("hidden");
-       document.getElementById("paired").classList.remove("hidden");
-       document.getElementById("pairedName").textContent=(data.name||"TV")+" · Esperando contenido...";
-     }
-   });
- }catch(e){
-   document.getElementById("waiting").classList.add("hidden");
-   document.getElementById("err").classList.remove("hidden");
- }
+  const code=document.getElementById("code");
+  const exp=document.getElementById("expires");
+  const net=document.getElementById("net");
+  const pairStage=document.getElementById("pairStage");
+  const remoteStage=document.getElementById("remoteStage");
+  const remoteVideo=document.getElementById("remoteVideo");
+  const mediaHud=document.getElementById("mediaHud");
+  const mediaTitle=document.getElementById("mediaTitle");
+  const mediaArtist=document.getElementById("mediaArtist");
+  const transportState=document.getElementById("transportState");
+  const audioGate=document.getElementById("audioGate");
+  const audioGateBtn=document.getElementById("audioGateBtn");
+
+  let session=null;
+  let pc=null;
+  let pendingIce=[];
+  let iceConfig=null;
+
+  function send(type,data){
+    KIT_PAIR.sendReceiver(Object.assign({type},data||{}));
+  }
+
+  async function fetchIce(){
+    if(iceConfig) return iceConfig;
+    const r=await fetch("/api/ice/"+encodeURIComponent(session.receiverId)+"?token="+encodeURIComponent(session.receiverToken),{cache:"no-store"});
+    const j=await r.json();
+    if(!r.ok||!j.ok) throw new Error(j.detail||"No se pudo obtener ICE");
+    iceConfig=j;
+    return j;
+  }
+
+  async function resetPeer(){
+    if(pc){try{pc.close()}catch(_){}}
+    pc=null;
+    pendingIce=[];
+    remoteVideo.srcObject=null;
+  }
+
+  async function ensurePeer(){
+    if(pc) return pc;
+    const ice=await fetchIce();
+    pc=new RTCPeerConnection({iceServers:ice.iceServers||[]});
+    pc.onicecandidate=e=>{
+      if(e.candidate) send("webrtc-ice",{candidate:e.candidate});
+    };
+    pc.onconnectionstatechange=()=>{
+      transportState.textContent="TV · WebRTC "+pc.connectionState;
+      send("media-state",{state:"peer-"+pc.connectionState});
+    };
+    pc.ontrack=async e=>{
+      const stream=e.streams&&e.streams[0]?e.streams[0]:new MediaStream([e.track]);
+      remoteVideo.srcObject=stream;
+      remoteStage.style.display="block";
+      pairStage.style.display="none";
+      mediaHud.style.display="block";
+      transportState.textContent="TV · recibiendo video";
+      try{
+        await remoteVideo.play();
+        audioGate.style.display="none";
+        send("media-state",{state:"playing"});
+      }catch(err){
+        audioGate.style.display="grid";
+        send("media-state",{state:"autoplay-blocked"});
+      }
+    };
+    return pc;
+  }
+
+  audioGateBtn.onclick=async()=>{
+    try{
+      remoteVideo.muted=false;
+      await remoteVideo.play();
+      audioGate.style.display="none";
+      send("media-state",{state:"playing"});
+    }catch(_){}
+  };
+
+  remoteVideo.addEventListener("playing",()=>send("media-state",{state:"playing"}));
+  remoteVideo.addEventListener("pause",()=>send("media-state",{state:"paused"}));
+  remoteVideo.addEventListener("error",()=>send("media-error",{message:"El receptor no pudo reproducir el stream WebRTC"}));
+
+  try{
+    session=await KIT_PAIR.createReceiver();
+    code.textContent=session.code;
+    const tick=()=>{
+      const sec=Math.max(0,Math.ceil((session.expiresAt-Date.now())/1000));
+      exp.textContent=sec?"Código válido por "+sec+" s":"Código vencido · recarga para generar otro";
+    };
+    tick();setInterval(tick,1000);
+
+    KIT_PAIR.on(async(type,data)=>{
+      if(type==="ws"){
+        net.textContent=data.status==="connected"?"Servidor conectado ✓":data.status==="error"?"Error de conexión":"Reconectando...";
+        return;
+      }
+      if(type==="paired"){
+        document.getElementById("waiting").classList.add("hidden");
+        document.getElementById("paired").classList.remove("hidden");
+        document.getElementById("pairedName").textContent=(data.name||"TV")+" · Esperando contenido...";
+        transportState.textContent="TV · vinculada · esperando video";
+        return;
+      }
+      if(type==="media-load"){
+        mediaTitle.textContent=data.title||"";
+        mediaArtist.textContent=data.artist||"";
+        transportState.textContent="TV · preparando "+(data.title||"contenido");
+        return;
+      }
+      if(type==="transport-reset"){
+        await resetPeer();
+        transportState.textContent="TV · transporte reiniciado";
+        return;
+      }
+      if(type==="webrtc-offer"){
+        const p=await ensurePeer();
+        await p.setRemoteDescription(new RTCSessionDescription(data.sdp));
+        const answer=await p.createAnswer();
+        await p.setLocalDescription(answer);
+        send("webrtc-answer",{sdp:p.localDescription});
+        while(pendingIce.length){
+          const cand=pendingIce.shift();
+          try{await p.addIceCandidate(cand)}catch(_){}
+        }
+        return;
+      }
+      if(type==="webrtc-ice"&&data.candidate){
+        if(pc&&pc.remoteDescription){
+          try{await pc.addIceCandidate(data.candidate)}catch(_){}
+        }else{
+          pendingIce.push(data.candidate);
+        }
+        return;
+      }
+      if(type==="media-control"){
+        if(data.action==="play"){try{await remoteVideo.play()}catch(_){audioGate.style.display="grid"}}
+        if(data.action==="pause") remoteVideo.pause();
+        if(data.action==="stop"){
+          remoteVideo.pause();
+          remoteVideo.srcObject=null;
+          remoteStage.style.display="none";
+          pairStage.style.display="";
+          transportState.textContent="TV · en espera";
+        }
+        if(data.action==="volume"){
+          remoteVideo.volume=Math.max(0,Math.min(1,Number(data.value||0)/100));
+        }
+      }
+    });
+  }catch(e){
+    document.getElementById("waiting").classList.add("hidden");
+    document.getElementById("err").classList.remove("hidden");
+    transportState.textContent="TV · error de receptor";
+  }
 })();
-</script></body></html>
+</script>
+</body>
+</html>

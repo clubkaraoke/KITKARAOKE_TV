@@ -3,6 +3,7 @@
   const listeners=new Set();
   let socket=null;
   let heartbeat=null;
+  let currentSession=null;
 
   function emit(type,data){listeners.forEach(fn=>{try{fn(type,data)}catch(_){}})}
   function on(fn){listeners.add(fn);return()=>listeners.delete(fn)}
@@ -14,6 +15,7 @@
   }
 
   function connectReceiverWs(session){
+    currentSession=session;
     if(socket){try{socket.close()}catch(_){}}
     socket=new WebSocket(wsUrl("/ws/receiver/"+encodeURIComponent(session.receiverId)+"?token="+encodeURIComponent(session.receiverToken)));
     socket.onopen=()=>{
@@ -31,6 +33,14 @@
     };
     socket.onclose=()=>{clearInterval(heartbeat);emit("ws",{status:"disconnected"})};
     socket.onerror=()=>emit("ws",{status:"error"});
+  }
+
+  function sendReceiver(message){
+    if(!socket||socket.readyState!==1) return false;
+    try{
+      socket.send(typeof message==="string"?message:JSON.stringify(message));
+      return true;
+    }catch(_){return false}
   }
 
   async function createReceiver(){
@@ -62,5 +72,7 @@
     return data;
   }
 
-  window.KIT_PAIR={createReceiver,claim,on,mode:cfg.mode};
+  function getSession(){return currentSession}
+
+  window.KIT_PAIR={createReceiver,claim,on,sendReceiver,getSession,mode:cfg.mode};
 })();
