@@ -1,0 +1,24 @@
+KITKARAOKE QUEUE PLAYER V3
+==========================
+
+OBJETIVO
+Reproducir canciones de YouTube sin iframe usando el motor estable V2.3,
+pero ahora con una COLA editable.
+
+FUNCIONES NUEVAS V3
+- Abrir playlists .CDP de Siglos.
+- Buscar canciones de YouTube directamente desde el programa.
+- Pegar URL de YouTube / youtu.be / Shorts / Live o un VIDEO_ID.
+- Agregar resultados a la cola.
+- Reproducir un resultado inmediatamente.
+- Eliminar canciones de la cola.
+- DRAG & DROP para cambiar el orden.
+- La canción en reproducción conserva su identidad al reordenar.
+- Anterior / siguiente siguen el ORDEN NUEVO de la cola.
+
+IMPORTANTE
+El buscador V3 usa yt-dlp local (ytsearch). NO necesita una YouTube Data API key.
+La reproducción validada es:
+VIDEO_ID -> yt-dlp --get-url -> video+audio -> FFmpeg -> navegador local.
+
+PUERTO V3: 8769
