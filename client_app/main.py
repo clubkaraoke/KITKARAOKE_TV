@@ -19,7 +19,8 @@ DB_PATH = DATA_DIR / "kitkaraoke_client.db"
 LICENSE_PEPPER = os.getenv("LICENSE_PEPPER","dev-only-change-me")
 SESSION_TTL = int(os.getenv("SESSION_TTL_SECONDS","2592000"))
 COOKIE_SECURE = os.getenv("COOKIE_SECURE","0") == "1"
-TV_API_BASE = os.getenv("TV_API_BASE","http://host.docker.internal")\nTV_API_HOST = os.getenv("TV_API_HOST","tv1.kitkaraoke.com")
+TV_API_BASE = os.getenv("TV_API_BASE","http://host.docker.internal")
+TV_API_HOST = os.getenv("TV_API_HOST","tv1.kitkaraoke.com")
 ENVIRONMENT = os.getenv("ENVIRONMENT","app1")
 DEV_TRIALS = os.getenv("DEV_TRIALS","1") == "1"
 
