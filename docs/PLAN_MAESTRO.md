@@ -117,3 +117,40 @@ Funciones:
 - múltiples TVs;
 - pantalla exclusiva de cantante;
 - administración remota.
+
+
+## Panel universal del cliente
+Arquitectura acordada:
+- `panel.kitkaraoke.com` = panel privado del administrador/propietario. No se expone a clientes.
+- `app1.kitkaraoke.com` = laboratorio del panel universal de clientes.
+- `app.kitkaraoke.com` = panel universal de clientes en producción.
+- `tv1.kitkaraoke.com` = laboratorio del receptor TV.
+- `tv.kitkaraoke.com` = receptor TV de producción.
+
+### Funciones ya implementadas en APP1
+- activación por código/licencia;
+- licencia almacenada con hash, no en texto plano;
+- sesiones con cookie HttpOnly;
+- límite de dispositivos por licencia;
+- fecha de vencimiento y estado;
+- Trial de 7 días solo para entorno APP1;
+- panel de estado de licencia;
+- vinculación real con código de 4 dígitos contra TV1;
+- logs por licencia;
+- cierre de sesión;
+- base SQLite persistente en OVH para desarrollo;
+- secreto/pepper generado localmente en OVH y fuera de GitHub.
+
+### Flujo final del cliente
+1. Cliente entra a `app.kitkaraoke.com`.
+2. Introduce su licencia o accede con su cuenta/licencia.
+3. El sistema valida plan, vigencia y dispositivos permitidos.
+4. Cliente abre `tv.kitkaraoke.com` en la Smart TV.
+5. TV muestra código de 4 dígitos.
+6. Cliente introduce el código desde su panel universal.
+7. OVH vincula APP + TV.
+8. Después, el motor local KITKARAOKE DJ se integrará al panel para búsqueda, CDP, cola, overlays y reproducción.
+9. Si algo falla, el cliente abre LOGS y puede enviar diagnóstico a soporte.
+
+### Producción futura
+El módulo de administración de licencias se integrará después en `panel.kitkaraoke.com`, sin mezclar el acceso privado del administrador con el acceso de los clientes.
