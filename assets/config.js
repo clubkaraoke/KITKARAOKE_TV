@@ -1,6 +1,6 @@
 window.KIT_CONFIG = {
-  mode: "preview",
+  mode: "live",
   apiBase: "",
   wsBase: "",
-  version: "WEB PREVIEW 0.1"
+  version: "TV1 LIVE DEV"
 };
