@@ -21,6 +21,7 @@ Actualizado: 2026-09-07
 - Reclamar/vincular código: PASS
 - Consultar estado paired: PASS
 - Reutilizar el mismo código: bloqueado correctamente (404)
+- Notificación de vinculación por WebSocket: PASS
 
 ## Pendiente externo
 `tv1.kitkaraoke.com` todavía no existe en DNS público.
