@@ -107,10 +107,11 @@ html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}
   let peerPolicy="all";
 
   const TD={
-    version:"TV-DIAG-1.1",logs:[],stats:{},media:null,offerAt:0,peerAt:0,trackAt:0,playingAt:0,
+    version:"TV-DIAG-1.2",logs:[],stats:{},media:null,offerAt:0,peerAt:0,trackAt:0,playingAt:0,
     waitAt:0,waitCount:0,stallMs:0,lastStatsAt:0,lastBytes:0,lastVideoBytes:0,lastAudioBytes:0,lastDropped:0,lastLost:0,
     lastFrameAt:0,lastFrameGap:0,frameCount:0,rxToDisplayMs:null,captureToDisplayMs:null,
-    frameWatch:false,warnAt:{},serverVersion:"",iceTest:null,iceTestRunning:false,startedAt:Date.now()
+    frameWatch:false,warnAt:{},serverVersion:"",iceTest:null,iceTestRunning:false,startedAt:Date.now(),
+    jbPrevV:null,jbPrevA:null,rawStats:{},mediaBase:{},receiverLatency:{video:null,audio:null},latencyTuneAt:0
   };
   try{
     const old=JSON.parse(sessionStorage.getItem("kit_tv_diag")||"[]");
@@ -152,7 +153,7 @@ html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}
       video:{width:remoteVideo.videoWidth||0,height:remoteVideo.videoHeight||0,readyState:remoteVideo.readyState,networkState:remoteVideo.networkState,
         paused:remoteVideo.paused,muted:remoteVideo.muted,volume:remoteVideo.volume,currentTime:Number(remoteVideo.currentTime||0),
         totalFrames:q?.totalVideoFrames||0,droppedFrames:q?.droppedVideoFrames||0,corruptedFrames:q?.corruptedVideoFrames||0},
-      stats:TD.stats,iceSelfTest:TD.iceTest,network:netInfo(),
+      stats:TD.stats,iceSelfTest:TD.iceTest,receiverLatency:TD.receiverLatency,network:netInfo(),
       device:{ua:navigator.userAgent,platform:navigator.platform||"",cpu:navigator.hardwareConcurrency||0,memory:navigator.deviceMemory||0,
         screen:screen.width+"x"+screen.height,dpr:window.devicePixelRatio||1,visibility:document.visibilityState},
       counters:{waitCount:TD.waitCount,stallMs:Math.round(TD.stallMs),frameCount:TD.frameCount,lastFrameGapMs:Math.round(TD.lastFrameGap||0)}
@@ -172,7 +173,9 @@ html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}
       "Resolución recibida: "+x.video.width+"x"+x.video.height+" · FPS "+metric(s.fps)+" · frames dropped "+(s.framesDropped??x.video.droppedFrames),
       "WebRTC: peer="+x.peer+" · ICE="+x.ice+" · signaling="+x.signaling+" · RTT="+metric(s.rttMs," ms"),
       "Red: jitter video="+metric(s.jitterVideoMs," ms")+" · jitter audio="+metric(s.jitterAudioMs," ms")+" · pérdida="+(s.packetsLost??"—")+" · bitrate="+metric(s.bitrateKbps," kbps"),
-      "Buffer receptor: video="+metric(s.jitterBufferVideoMs," ms")+" · audio="+metric(s.jitterBufferAudioMs," ms")+" · delta A/V="+metric(s.avBufferDeltaMs," ms"),
+      "Buffer receptor (ventana): video="+metric(s.jitterBufferVideoMs," ms")+" · audio="+metric(s.jitterBufferAudioMs," ms")+" · delta A/V="+metric(s.avBufferDeltaMs," ms"),
+      "Buffer promedio peer: video="+metric(s.jitterBufferVideoAvgMs," ms")+" · audio="+metric(s.jitterBufferAudioAvgMs," ms")+
+        " · target="+JSON.stringify(TD.receiverLatency),
       "Decode: "+metric(s.decodeMs," ms/frame")+" · freezes="+(s.freezeCount??"—")+" · total freeze="+metric(s.freezeDurationMs," ms"),
       "Inicio TV: media-load→playing="+metric(s.startupMs," ms")+" · offer→connected="+metric(s.peerConnectMs," ms"),
       "Frame: receive→display="+metric(TD.rxToDisplayMs," ms")+" · capture→display(est.)="+metric(TD.captureToDisplayMs," ms")+" · último gap="+metric(TD.lastFrameGap," ms"),
@@ -218,6 +221,47 @@ html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}
   window.addEventListener("error",e=>dlog("ERROR","BROWSER",e.message||"Error JavaScript",(e.filename||"")+" "+(e.lineno||0)+":"+(e.colno||0)+"\n"+(e.error?.stack||"")));
   window.addEventListener("unhandledrejection",e=>dlog("ERROR","BROWSER","Promesa no controlada",String(e.reason?.stack||e.reason||"")));
 
+  function tuneReceiverLatency(reason){
+    if(!pc||typeof pc.getReceivers!=="function")return;
+    const applied={video:null,audio:null},parts=[];
+    for(const r of pc.getReceivers()){
+      const kind=r.track?.kind;if(kind!=="video"&&kind!=="audio")continue;
+      const target=kind==="video"?90:100;
+      let ok=false;
+      try{
+        if("jitterBufferTarget" in r){
+          r.jitterBufferTarget=target;
+          applied[kind]=Number(r.jitterBufferTarget);
+          parts.push(kind+":jitterBufferTarget="+applied[kind]+"ms");ok=true;
+        }
+      }catch(err){parts.push(kind+":jitterBufferTarget ERR "+String(err?.message||err))}
+      try{
+        if("playoutDelayHint" in r){
+          r.playoutDelayHint=target/1000;
+          parts.push(kind+":playoutDelayHint="+Number(r.playoutDelayHint||0).toFixed(3)+"s");ok=true;
+        }
+      }catch(err){parts.push(kind+":playoutDelayHint ERR "+String(err?.message||err))}
+      if(!ok&&applied[kind]==null)applied[kind]="unsupported";
+    }
+    TD.receiverLatency=applied;TD.latencyTuneAt=Date.now();
+    dlog("INFO","WEBRTC","Latencia receptor afinada",(reason||"")+" · "+(parts.join(" · ")||"API no soportada"),false);
+  }
+  function jitterWindow(r,key){
+    if(!r)return {window:null,avg:null};
+    const delay=Number(r.jitterBufferDelay||0),count=Number(r.jitterBufferEmittedCount||0);
+    const avg=count>0?1000*delay/count:null;
+    const prop=key==="v"?"jbPrevV":"jbPrevA",prev=TD[prop];
+    let win=null;
+    if(prev&&count>prev.count&&delay>=prev.delay)win=1000*(delay-prev.delay)/(count-prev.count);
+    else if(count>0)win=avg;
+    TD[prop]={delay,count};
+    return {window:win,avg};
+  }
+  function since(raw,base){
+    raw=Number(raw||0);base=Number(base||0);
+    return raw>=base?raw-base:raw;
+  }
+
   async function sampleStats(){
     if(!pc||pc.connectionState==="closed")return;
     try{
@@ -229,32 +273,43 @@ html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}
         else if(r.type==="candidate-pair"&&(r.selected||r.nominated)&&r.state==="succeeded")pair=r;
       });
       if(!pair&&transport?.selectedCandidatePairId)pair=reports.get(transport.selectedCandidatePairId)||null;
-      const jb=r=>r&&r.jitterBufferEmittedCount?1000*Number(r.jitterBufferDelay||0)/Number(r.jitterBufferEmittedCount):null;
+      const jbv=jitterWindow(v,"v"),jba=jitterWindow(a,"a");
       const now=performance.now(),vBytes=Number(v?.bytesReceived||0),aBytes=Number(a?.bytesReceived||0),bytes=vBytes+aBytes,dt=TD.lastStatsAt?now-TD.lastStatsAt:0;
       const bitrate=dt>0&&bytes>=TD.lastBytes?((bytes-TD.lastBytes)*8/dt):0;
       const videoBitrate=dt>0&&vBytes>=TD.lastVideoBytes?((vBytes-TD.lastVideoBytes)*8/dt):0;
       const audioBitrate=dt>0&&aBytes>=TD.lastAudioBytes?((aBytes-TD.lastAudioBytes)*8/dt):0;
       const q=(()=>{try{return remoteVideo.getVideoPlaybackQuality?remoteVideo.getVideoPlaybackQuality():null}catch(_){return null}})();
-      const dropped=Math.max(Number(v?.framesDropped||0),Number(q?.droppedVideoFrames||0)),lost=Number(v?.packetsLost||0);
+      const rawDropped=Math.max(Number(v?.framesDropped||0),Number(q?.droppedVideoFrames||0)),rawLost=Number(v?.packetsLost||0);
+      const rawDecoded=Number(v?.framesDecoded||0),rawVPackets=Number(v?.packetsReceived||0),rawAPackets=Number(a?.packetsReceived||0);
+      const rawFreezeCount=Number(v?.freezeCount||0),rawFreezeMs=1000*Number(v?.totalFreezesDuration||0);
+      TD.rawStats={dropped:rawDropped,lost:rawLost,decoded:rawDecoded,vPackets:rawVPackets,aPackets:rawAPackets,freezeCount:rawFreezeCount,freezeMs:rawFreezeMs,bytes};
+      const base=TD.mediaBase||{};
+      const dropped=since(rawDropped,base.dropped),lost=since(rawLost,base.lost),decoded=since(rawDecoded,base.decoded);
+      const vPackets=since(rawVPackets,base.vPackets),aPackets=since(rawAPackets,base.aPackets);
+      const freezeCount=since(rawFreezeCount,base.freezeCount),freezeMs=since(rawFreezeMs,base.freezeMs);
       TD.stats={
-        fps:Number(v?.framesPerSecond||0),framesDecoded:Number(v?.framesDecoded||0),framesDropped:dropped,droppedDelta:Math.max(0,dropped-TD.lastDropped),
-        packetsLost:lost,lostDelta:Math.max(0,lost-TD.lastLost),packetsReceived:Number(v?.packetsReceived||0)+Number(a?.packetsReceived||0),
-        videoPacketsReceived:Number(v?.packetsReceived||0),audioPacketsReceived:Number(a?.packetsReceived||0),
+        fps:Number(v?.framesPerSecond||0),framesDecoded:decoded,framesDropped:dropped,droppedDelta:Math.max(0,rawDropped-TD.lastDropped),
+        packetsLost:lost,lostDelta:Math.max(0,rawLost-TD.lastLost),packetsReceived:vPackets+aPackets,
+        videoPacketsReceived:vPackets,audioPacketsReceived:aPackets,
         jitterVideoMs:v?.jitter!=null?Number(v.jitter)*1000:null,jitterAudioMs:a?.jitter!=null?Number(a.jitter)*1000:null,
-        jitterBufferVideoMs:jb(v),jitterBufferAudioMs:jb(a),avBufferDeltaMs:(jb(v)!=null&&jb(a)!=null)?jb(v)-jb(a):null,
+        jitterBufferVideoMs:jbv.window,jitterBufferAudioMs:jba.window,avBufferDeltaMs:(jbv.window!=null&&jba.window!=null)?jbv.window-jba.window:null,
+        jitterBufferVideoAvgMs:jbv.avg,jitterBufferAudioAvgMs:jba.avg,
         decodeMs:v?.framesDecoded?1000*Number(v.totalDecodeTime||0)/Number(v.framesDecoded):null,
-        freezeCount:v?.freezeCount!=null?Number(v.freezeCount):null,freezeDurationMs:v?.totalFreezesDuration!=null?1000*Number(v.totalFreezesDuration):null,
+        freezeCount,freezeDurationMs:freezeMs,
         rttMs:pair?.currentRoundTripTime!=null?1000*Number(pair.currentRoundTripTime):null,
         bitrateKbps:bitrate||null,videoBitrateKbps:videoBitrate||null,audioBitrateKbps:audioBitrate||null,
         totalVideoFrames:Number(q?.totalVideoFrames||0),availableIncomingKbps:pair?.availableIncomingBitrate?Number(pair.availableIncomingBitrate)/1000:null,
         startupMs:TD.playingAt&&TD.media?.loadPerf?TD.playingAt-TD.media.loadPerf:null,
         peerConnectMs:TD.stats.peerConnectMs||null
       };
-      TD.lastStatsAt=now;TD.lastBytes=bytes;TD.lastVideoBytes=vBytes;TD.lastAudioBytes=aBytes;TD.lastDropped=dropped;TD.lastLost=lost;
-      if((TD.stats.droppedDelta||0)>3)warnRate("drop","Frames descartados en TV","+"+TD.stats.droppedDelta+" · total "+dropped);
+      TD.lastStatsAt=now;TD.lastBytes=bytes;TD.lastVideoBytes=vBytes;TD.lastAudioBytes=aBytes;TD.lastDropped=rawDropped;TD.lastLost=rawLost;
+      if((TD.stats.droppedDelta||0)>3)warnRate("drop","Frames descartados en TV","+"+TD.stats.droppedDelta+" · pista actual "+dropped);
       if((TD.stats.lostDelta||0)>2)warnRate("loss","Pérdida de paquetes WebRTC","+"+TD.stats.lostDelta+" · total "+lost);
       if((TD.stats.rttMs||0)>250)warnRate("rtt","RTT alto en TV",metric(TD.stats.rttMs," ms"));
-      if((TD.stats.jitterBufferVideoMs||0)>180)warnRate("jitterbuf","Buffer de jitter alto",metric(TD.stats.jitterBufferVideoMs," ms"));
+      if((TD.stats.jitterBufferVideoMs||0)>180){
+        warnRate("jitterbuf","Buffer de jitter actual alto",metric(TD.stats.jitterBufferVideoMs," ms")+" · avg peer "+metric(TD.stats.jitterBufferVideoAvgMs," ms"));
+        if(Date.now()-TD.latencyTuneAt>8000)tuneReceiverLatency("retune por jitter alto");
+      }
       if(Date.now()-(TD.lastReport||0)>10000){
         TD.lastReport=Date.now();
         send("diag-tv",{event:"stats",level:"INFO",playId:TD.media?.playId||"",kind:TD.media?.kind||"",title:TD.media?.title||"",
@@ -405,6 +460,7 @@ html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}
       e.track.onended=()=>dlog("WARN","WEBRTC","Track "+e.track.kind+" ended","",true);
       const current=remoteVideo.srcObject;
       if(!current||current.id!==stream.id)remoteVideo.srcObject=stream;
+      setTimeout(()=>tuneReceiverLatency("ontrack "+e.track.kind),80);
       remoteStage.style.display="block";
       pairStage.style.display="none";
       mediaHud.style.display="block";
@@ -496,8 +552,12 @@ html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}
         mediaTitle.textContent=data.title||"";
         mediaArtist.textContent=data.artist||"";
         TD.media={playId:data.playId||"",title:data.title||"",artist:data.artist||"",kind:data.kind||"",duration:Number(data.duration||0),loadAt:Date.now(),loadPerf:performance.now()};
+        TD.mediaBase=Object.assign({},TD.rawStats||{});
+        TD.jbPrevV=null;TD.jbPrevA=null;
         TD.playingAt=0;TD.offerAt=0;TD.waitAt=0;TD.waitCount=0;TD.stallMs=0;TD.lastFrameAt=0;TD.lastFrameGap=0;TD.frameCount=0;
+        TD.lastStatsAt=0;TD.lastBytes=Number(TD.rawStats?.bytes||0);TD.lastVideoBytes=0;TD.lastAudioBytes=0;
         transportState.textContent="TV · preparando "+(data.title||"contenido");
+        setTimeout(()=>tuneReceiverLatency("media-load "+(TD.media.kind||"")),100);
         dlog("INFO","MEDIA","Media-load recibido",(TD.media.playId?TD.media.playId+" · ":"")+(TD.media.kind||"")+" · duración "+TD.media.duration+" s",false);
         return;
       }
